@@ -1,26 +1,376 @@
 @import "tailwindcss";
 
+/* ============================================================
+   VSK SPORTS — design tokens (ported verbatim from assets/vsk.css)
+   Raw tokens live in :root; @theme inline maps them to Tailwind
+   utility namespaces (bg-blue, text-steel, font-mono, rounded-lg…).
+   ============================================================ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* ink & paper (cool neutrals) */
+  --ink: #0b0f17;
+  --ink-2: #161d2b;
+  --steel: #56627a;
+  --mute: #8b96ab;
+  --line: #e3e8f1;
+  --line-2: #d2d9e6;
+  --paper: #ffffff;
+  --paper-2: #f5f7fb;
+  --paper-3: #edf1f8;
+
+  /* brand */
+  --blue: #1b43c8;
+  --blue-2: #2e5be6;
+  --blue-ink: #0b1f5e;
+  --blue-wash: #eaf0fe;
+  --blue-wash-2: #dce6fd;
+  --red: #e11d2b;
+  --red-2: #f23645;
+  --red-ink: #9e0e18;
+  --red-wash: #fdecec;
+  --amber: #f2a900;
+
+  /* radius */
+  --r-sm: 4px;
+  --r: 8px;
+  --r-lg: 14px;
+
+  /* elevation */
+  --shadow-1: 0 1px 2px rgba(11, 15, 23, 0.05), 0 2px 8px rgba(11, 15, 23, 0.05);
+  --shadow-2: 0 4px 12px rgba(11, 15, 23, 0.07), 0 12px 32px rgba(11, 15, 23, 0.08);
+  --shadow-3: 0 18px 50px rgba(11, 31, 94, 0.16);
+
+  --wrap: 1240px;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-steel: var(--steel);
+  --color-mute: var(--mute);
+  --color-line: var(--line);
+  --color-line-2: var(--line-2);
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
+  --color-paper-3: var(--paper-3);
+
+  --color-blue: var(--blue);
+  --color-blue-2: var(--blue-2);
+  --color-blue-ink: var(--blue-ink);
+  --color-blue-wash: var(--blue-wash);
+  --color-blue-wash-2: var(--blue-wash-2);
+  --color-red: var(--red);
+  --color-red-2: var(--red-2);
+  --color-red-ink: var(--red-ink);
+  --color-red-wash: var(--red-wash);
+  --color-amber: var(--amber);
+
+  /* fonts come from next/font CSS variables set on <html> */
+  --font-display: var(--font-space-grotesk), system-ui, sans-serif;
+  --font-sans: var(--font-space-grotesk), system-ui, sans-serif;
+  --font-mono: var(--font-spline-mono), ui-monospace, monospace;
+
+  --radius-sm: var(--r-sm);
+  --radius-md: var(--r);
+  --radius-lg: var(--r-lg);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ============================================================
+   Base
+   ============================================================ */
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    font-family: var(--font-sans);
+    color: var(--ink);
+    background: var(--paper);
+    font-size: 17px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  img {
+    display: block;
+    max-width: 100%;
+  }
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 800;
+    line-height: 0.98;
+    letter-spacing: -0.01em;
+  }
+  :focus-visible {
+    outline: 3px solid var(--blue-2);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ============================================================
+   Primitives (ported from vsk.css)
+   ============================================================ */
+@layer components {
+  .wrap {
+    max-width: var(--wrap);
+    margin: 0 auto;
+    padding: 0 28px;
+  }
+  .section {
+    padding: 84px 0;
+  }
+  .section--tight {
+    padding: 60px 0;
+  }
+
+  /* type helpers */
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--blue);
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+  }
+  .eyebrow::before {
+    content: "";
+    width: 22px;
+    height: 1px;
+    background: var(--blue);
+    display: inline-block;
+  }
+  .eyebrow--red {
+    color: var(--red);
+  }
+  .eyebrow--red::before {
+    background: var(--red);
+  }
+  .eyebrow--light {
+    color: #9db2ff;
+  }
+  .eyebrow--light::before {
+    background: #9db2ff;
+  }
+  .h-sec {
+    font-size: clamp(34px, 4.4vw, 58px);
+    text-transform: uppercase;
+    letter-spacing: -0.015em;
+  }
+  .lead {
+    color: var(--steel);
+    font-size: 18px;
+    max-width: 54ch;
+  }
+  .mono-tag {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--mute);
+  }
+
+  /* buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 15px 26px;
+    border: 1px solid transparent;
+    border-radius: var(--r);
+    transition: transform 0.15s ease, background 0.2s ease, box-shadow 0.2s ease,
+      color 0.2s, border-color 0.2s;
+    white-space: nowrap;
+  }
+  .btn svg {
+    width: 18px;
+    height: 18px;
+  }
+  .btn--primary {
+    background: var(--blue);
+    color: #fff;
+    box-shadow: 0 8px 20px rgba(27, 67, 200, 0.28);
+  }
+  .btn--primary:hover {
+    background: var(--blue-2);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(27, 67, 200, 0.36);
+  }
+  .btn--red {
+    background: var(--red);
+    color: #fff;
+    box-shadow: 0 8px 20px rgba(225, 29, 43, 0.28);
+  }
+  .btn--red:hover {
+    background: var(--red-2);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(225, 29, 43, 0.34);
+  }
+  .btn--ghost {
+    background: transparent;
+    color: var(--ink);
+    border-color: var(--line-2);
+  }
+  .btn--ghost:hover {
+    border-color: var(--ink);
+    transform: translateY(-2px);
+  }
+  .btn--light {
+    background: #fff;
+    color: var(--ink);
+  }
+  .btn--light:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-2);
+  }
+  .btn--ondark {
+    background: transparent;
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.32);
+  }
+  .btn--ondark:hover {
+    border-color: #fff;
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateY(-2px);
+  }
+  .btn--sm {
+    padding: 11px 18px;
+    font-size: 14px;
+  }
+
+  /* chips / badges */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: var(--paper-2);
+    color: var(--steel);
+    border: 1px solid var(--line);
+  }
+  .chip--new {
+    background: var(--blue);
+    color: #fff;
+    border-color: transparent;
+  }
+  .chip--sale {
+    background: var(--red);
+    color: #fff;
+    border-color: transparent;
+  }
+  .chip--vsk {
+    background: var(--ink);
+    color: #fff;
+    border-color: transparent;
+  }
+  .chip--live {
+    background: var(--red-wash);
+    color: var(--red-ink);
+    border-color: transparent;
+  }
+  .chip--live .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--red);
+    animation: pulse 1.4s infinite;
+  }
+  @keyframes pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.3;
+    }
+  }
+
+  /* precision motifs */
+  .ticks {
+    position: relative;
+  }
+  .ticks::before,
+  .ticks::after {
+    content: "";
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    pointer-events: none;
+  }
+  .ticks::before {
+    top: 0;
+    left: 0;
+    border-top: 2px solid var(--blue);
+    border-left: 2px solid var(--blue);
+  }
+  .ticks::after {
+    bottom: 0;
+    right: 0;
+    border-bottom: 2px solid var(--blue);
+    border-right: 2px solid var(--blue);
+  }
+  .dotgrid {
+    background-image: radial-gradient(var(--line-2) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+
+  /* accessibility */
+  .skip-link {
+    position: fixed;
+    top: -60px;
+    left: 16px;
+    z-index: 999;
+    background: var(--blue);
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 0 0 var(--r) var(--r);
+    font-family: var(--font-display);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    transition: top 0.2s;
+  }
+  .skip-link:focus {
+    top: 0;
+  }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
 }

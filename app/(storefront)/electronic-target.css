@@ -1,0 +1,32 @@
+/* Electronic-Target landing — page-specific styles (ported from the prototype's inline <style>). */
+.et-hero { background: var(--ink); color: #fff; position: relative; overflow: hidden; }
+.et-hero .wrap { position: relative; z-index: 2; display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 50px; align-items: center; padding: 64px 28px 72px; }
+.et-hero__grid { position: absolute; inset: 0; background-image: radial-gradient(rgba(157, 178, 255, 0.1) 1px, transparent 1px); background-size: 26px 26px; z-index: 1; }
+.et-hero h1 { font-family: var(--font-display); font-weight: 900; font-size: clamp(44px, 6vw, 82px); line-height: 0.9; text-transform: uppercase; letter-spacing: -0.02em; color: #fff; }
+.et-hero h1 em { font-style: normal; color: #9db2ff; }
+.et-hero__sub { font-size: 19px; color: #aeb9d2; max-width: 46ch; margin-top: 20px; }
+.et-hero__cta { display: flex; gap: 13px; margin-top: 30px; flex-wrap: wrap; }
+.et-hero__stats { display: flex; gap: 30px; margin-top: 34px; }
+.et-hero__stats b { font-family: var(--font-display); font-weight: 800; font-size: 34px; line-height: 1; display: block; color: #fff; }
+.et-hero__stats span { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #7e8ba6; }
+.et-vis { position: relative; }
+.et-vis__frame { border-radius: var(--r-lg); overflow: hidden; box-shadow: var(--shadow-3); position: relative; }
+.et-hud { position: absolute; right: -14px; top: 30px; z-index: 5; width: 200px; border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 14px; background: rgba(11, 15, 23, 0.82); backdrop-filter: blur(8px); padding: 16px; }
+.et-hud .lab { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: #7e8ba6; }
+.et-hud .big { font-family: var(--font-display); font-weight: 800; font-size: 46px; line-height: 1; color: #fff; }
+.et-hud .big .u { font-size: 16px; color: #9db2ff; }
+.et-hud .ring { display: flex; justify-content: center; margin: 10px 0; }
+.et-feat { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.et-fcard { border: 1px solid var(--line); border-radius: var(--r-lg); background: #fff; padding: 26px 24px; transition: transform 0.2s, box-shadow 0.2s; }
+.et-fcard:hover { transform: translateY(-4px); box-shadow: var(--shadow-1); }
+.et-fcard .ic { width: 50px; height: 50px; border-radius: 13px; background: var(--blue-wash); color: var(--blue); display: grid; place-items: center; margin-bottom: 18px; }
+.et-fcard .ic svg { width: 25px; height: 25px; }
+.et-fcard b { font-family: var(--font-display); font-weight: 700; font-size: 19px; text-transform: uppercase; display: block; }
+.et-fcard p { color: var(--steel); font-size: 14.5px; margin-top: 8px; }
+.et-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+.et-step { position: relative; padding-top: 18px; border-top: 2px solid var(--line-2); }
+.et-step .no { font-family: var(--font-display); font-weight: 800; font-size: 32px; color: var(--blue); line-height: 1; }
+.et-step b { font-family: var(--font-display); font-weight: 700; font-size: 17px; text-transform: uppercase; display: block; margin: 8px 0 6px; }
+.et-step p { color: var(--steel); font-size: 14px; }
+@media (max-width: 900px) { .et-hero .wrap { grid-template-columns: 1fr; gap: 36px; } .et-feat { grid-template-columns: 1fr; } }
+@media (max-width: 880px) { .et-steps { grid-template-columns: 1fr 1fr; } }
