@@ -1,0 +1,5 @@
+/* Returns — small extras missing from site.css (dropzone + return status chips). */
+.dropz{ border:1.5px dashed var(--line-2); border-radius:var(--r-lg); padding:8px; background:var(--paper-2); }
+.rsel{ appearance:none; width:20px; height:20px; border:1.5px solid var(--line-2); border-radius:5px; align-self:center; position:relative; cursor:pointer; transition:all .15s; }
+.rsel:checked{ background:var(--blue); border-color:var(--blue); }
+.rsel:checked::after{ content:""; position:absolute; left:6px; top:2.5px; width:5px; height:9px; border-right:2px solid #fff; border-bottom:2px solid #fff; transform:rotate(45deg); }

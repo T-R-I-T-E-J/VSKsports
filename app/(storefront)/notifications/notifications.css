@@ -1,0 +1,15 @@
+/* Notifications — ported from the reference page's inline styles
+   (font vars renamed to the app's --font-* names). */
+.notif{ display:flex; gap:15px; padding:18px 20px; border-bottom:1px solid var(--line); transition:background .15s; cursor:pointer; align-items:flex-start; width:100%; text-align:left; background:#fff; border-left:none; border-right:none; border-top:none; font:inherit; color:inherit; }
+.notif:last-child{ border-bottom:none; }
+.notif:hover{ background:var(--paper-2); }
+.notif.unread{ background:var(--blue-wash); }
+.notif.unread:hover{ background:var(--blue-wash-2); }
+.notif__ic{ width:42px; height:42px; border-radius:11px; display:grid; place-items:center; flex-shrink:0; }
+.notif__ic svg{ width:21px; height:21px; }
+.notif__b{ flex:1; min-width:0; }
+.notif__b b{ font-weight:700; font-size:15px; }
+.notif__b p{ color:var(--steel); font-size:14px; margin-top:3px; line-height:1.45; }
+.notif__t{ font-family:var(--font-mono); font-size:10.5px; color:var(--mute); letter-spacing:.04em; white-space:nowrap; flex-shrink:0; }
+.notif__dot{ width:9px; height:9px; border-radius:50%; background:var(--blue); flex-shrink:0; margin-top:6px; }
+.notif.read .notif__dot{ visibility:hidden; }
