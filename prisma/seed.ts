@@ -44,6 +44,9 @@ const CATEGORIES: [string, string][] = [
 ];
 
 async function clear() {
+  await prisma.translation.deleteMany();
+  await prisma.staffAction.deleteMany();
+  await prisma.inventoryAdjustment.deleteMany();
   await prisma.returnItem.deleteMany();
   await prisma.orderEvent.deleteMany();
   await prisma.emailLog.deleteMany();
@@ -135,6 +138,8 @@ async function main() {
         badge: p.tag ?? null,
         priceInr,
         mrpInr: p.was ? parsePrice(p.was) : null,
+        dealerPriceInr: Math.round(priceInr * 0.7), // wholesale ≈ 30% margin
+
         rating: p.r ? parseFloat(p.r) : null,
         reviewCount: typeof p.rev === "number" ? p.rev : 0,
         inventory: {
@@ -204,6 +209,7 @@ async function main() {
     },
   });
   const primaryCustomerId: string = userByName.values().next().value ?? admin.id;
+  await prisma.user.update({ where: { id: primaryCustomerId }, data: { loyaltyTier: "GOLD" } });
 
   // ---- Addresses (demo customer) ----
   await prisma.address.createMany({
@@ -478,6 +484,33 @@ async function main() {
       data: { productId: pp.id, userId: primaryCustomerId, authorName: "Aarav D.", rating: 4, title: "Awaiting moderation", body: "Solid rifle — review pending approval.", status: "PENDING" },
     });
   }
+
+  // ---- Wave 0: audit log, inventory adjustments, i18n ----
+  await prisma.staffAction.createMany({
+    data: [
+      { staffId: admin.id, action: "ORDER_STATUS_UPDATED", entity: "Order", entityId: firstOrder?.id ?? null, detail: "PROCESSING → SHIPPED" },
+      { staffId: admin.id, action: "REVIEW_APPROVED", entity: "Review", detail: "Approved 3 product reviews" },
+    ],
+  });
+  const inv = await prisma.inventoryItem.findFirst();
+  if (inv) {
+    await prisma.inventoryAdjustment.create({
+      data: { inventoryItemId: inv.id, delta: 10, reason: "Stock received — June shipment", staffId: admin.id },
+    });
+    await prisma.inventoryItem.update({ where: { id: inv.id }, data: { stock: { increment: 10 } } });
+  }
+  await prisma.translation.createMany({
+    data: [
+      { locale: "en", key: "nav.shop", value: "Shop" },
+      { locale: "hi", key: "nav.shop", value: "दुकान" },
+      { locale: "en", key: "nav.brands", value: "Brands" },
+      { locale: "hi", key: "nav.brands", value: "ब्रांड्स" },
+      { locale: "en", key: "cta.shopNow", value: "Shop Now" },
+      { locale: "hi", key: "cta.shopNow", value: "अभी खरीदें" },
+      { locale: "en", key: "cart.title", value: "Your Cart" },
+      { locale: "hi", key: "cart.title", value: "आपकी कार्ट" },
+    ],
+  });
 
   const [pc, uc, oc, bc] = await Promise.all([
     prisma.product.count(),

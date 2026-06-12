@@ -44,6 +44,7 @@ model User {
   verifiedAt     DateTime? // ID / licence verification later
   // ---
   loyaltyPoints  Int          @default(0)
+  loyaltyTier    LoyaltyTier  @default(BRONZE)
   marketingOptIn Boolean      @default(true)
   lastLoginAt    DateTime?
   createdAt      DateTime     @default(now())
@@ -68,6 +69,8 @@ model User {
   authoredNotes         CustomerNote[]         @relation("AuthoredNotes")
   trainingRegistrations TrainingRegistration[]
   eventRegistrations    EventRegistration[]
+  staffActions          StaffAction[]          @relation("StaffActions")
+  inventoryAdjustments  InventoryAdjustment[]  @relation("InventoryAdjustments")
 }
 
 // Auth.js (NextAuth) adapter models
@@ -197,14 +200,15 @@ model ProductVariant {
 }
 
 model InventoryItem {
-  id           String   @id @default(cuid())
-  productId    String   @unique
-  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  sku          String   @unique
-  stock        Int      @default(0)
-  reserved     Int      @default(0)
-  reorderPoint Int      @default(0)
-  updatedAt    DateTime @updatedAt
+  id           String                @id @default(cuid())
+  productId    String                @unique
+  product      Product               @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sku          String                @unique
+  stock        Int                   @default(0)
+  reserved     Int                   @default(0)
+  reorderPoint Int                   @default(0)
+  adjustments  InventoryAdjustment[]
+  updatedAt    DateTime              @updatedAt
 }
 
 // ============================================================
@@ -421,6 +425,7 @@ model DealerApplication {
   reviewedById    String?
   reviewedBy      User?           @relation("ReviewedApplications", fields: [reviewedById], references: [id])
   reviewNotes     String?
+  terms           String? // agreed terms on approval (margin, territory, credit)
   reviewedAt      DateTime?
   createdAt       DateTime        @default(now())
 }
@@ -657,4 +662,55 @@ model EmailLog {
   orderId   String?
   order     Order?      @relation(fields: [orderId], references: [id])
   createdAt DateTime    @default(now())
+}
+
+// ============================================================
+// Loyalty tier (customer rewards)
+// ============================================================
+enum LoyaltyTier {
+  BRONZE
+  SILVER
+  GOLD
+  PLATINUM
+}
+
+// ============================================================
+// Staff audit log (admin/CRM)
+// ============================================================
+model StaffAction {
+  id        String   @id @default(cuid())
+  staffId   String
+  staff     User     @relation("StaffActions", fields: [staffId], references: [id], onDelete: Cascade)
+  action    String // e.g. ORDER_STATUS_UPDATED, REVIEW_APPROVED
+  entity    String // e.g. Order, Product, Review
+  entityId  String?
+  detail    String?
+  createdAt DateTime @default(now())
+}
+
+// ============================================================
+// Inventory adjustment history
+// ============================================================
+model InventoryAdjustment {
+  id              String        @id @default(cuid())
+  inventoryItemId String
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+  delta           Int // +receive / -correction
+  reason          String?
+  staffId         String?
+  staff           User?         @relation("InventoryAdjustments", fields: [staffId], references: [id])
+  createdAt       DateTime      @default(now())
+}
+
+// ============================================================
+// i18n translations (EN + HI; Hindi copy stubbed until supplied)
+// ============================================================
+model Translation {
+  id        String @id @default(cuid())
+  locale    String // "en" | "hi"
+  namespace String @default("common")
+  key       String
+  value     String
+
+  @@unique([locale, namespace, key])
 }
