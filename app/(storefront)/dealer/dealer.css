@@ -1,0 +1,88 @@
+/* ============================================================
+   VSK SPORTS — Dealer portal (storefront-styled wholesale dashboard)
+   Ported from design_handoff_vsk_sports/assets/customer.css
+   (font vars renamed: --display→--font-display, --sans→--font-sans,
+   --mono→--font-mono). Loaded with globals.css + site.css.
+   ============================================================ */
+
+/* ---------- KPI tiles ---------- */
+.ctiles{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+.ctile{ background:#fff; border:1px solid var(--line); border-radius:var(--r-lg); padding:20px; display:flex; align-items:center; gap:16px; transition:box-shadow .2s, transform .2s; }
+.ctile:hover{ box-shadow:var(--shadow-1); transform:translateY(-2px); }
+.ctile__ic{ width:48px; height:48px; border-radius:13px; display:grid; place-items:center; flex-shrink:0; }
+.ctile__ic svg{ width:24px; height:24px; }
+.ctile__ic.blue{ background:var(--blue-wash); color:var(--blue); }
+.ctile__ic.red{ background:var(--red-wash); color:var(--red); }
+.ctile__ic.green{ background:#E4F7EC; color:#1FA855; }
+.ctile__ic.amber{ background:#FDF3DC; color:#C8961E; }
+.ctile b{ font-family:var(--font-display); font-weight:800; font-size:26px; line-height:1; display:block; }
+.ctile span{ font-family:var(--font-mono); font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--steel); }
+@media(max-width:1100px){ .ctiles{ grid-template-columns:repeat(2,1fr); } }
+@media(max-width:520px){ .ctiles{ grid-template-columns:1fr; } }
+
+/* ---------- Panels ---------- */
+.cpanel{ background:#fff; border:1px solid var(--line); border-radius:var(--r-lg); }
+.cpanel__head{ display:flex; align-items:center; justify-content:space-between; gap:14px; padding:18px 22px; border-bottom:1px solid var(--line); }
+.cpanel__head h3{ font-family:var(--font-display); font-weight:800; font-size:19px; text-transform:uppercase; letter-spacing:-.005em; line-height:1.16; }
+.cpanel__head a{ font-family:var(--font-display); font-weight:700; font-size:13px; text-transform:uppercase; letter-spacing:.04em; color:var(--blue); display:inline-flex; align-items:center; gap:6px; white-space:nowrap; }
+.cpanel__body{ padding:22px; }
+.cgrid{ display:grid; gap:16px; margin-top:16px; }
+.cgrid--2{ grid-template-columns:1.5fr 1fr; }
+@media(max-width:980px){ .cgrid--2{ grid-template-columns:1fr; } }
+
+/* ---------- Order list rows ---------- */
+.corder{ display:grid; grid-template-columns:auto 1fr auto; gap:14px; align-items:center; padding:15px 0; border-bottom:1px solid var(--line); }
+.corder:last-child{ border-bottom:none; }
+.corder__ph{ width:48px; height:48px; border:1px solid var(--line); border-radius:var(--r-sm); background:var(--paper-3); display:grid; place-items:center; font-family:var(--font-mono); font-size:9px; color:var(--mute); text-transform:uppercase; }
+.corder__b b{ font-weight:600; font-size:14.5px; display:block; }
+.corder__b span{ font-family:var(--font-mono); font-size:11px; color:var(--mute); }
+.corder__r{ text-align:right; }
+.corder__r b{ font-family:var(--font-display); font-weight:800; font-size:16px; display:block; }
+
+/* ---------- Quick reorder minis ---------- */
+.crecs{ display:grid; gap:12px; }
+.crec{ display:flex; align-items:center; gap:13px; padding:10px; border:1px solid var(--line); border-radius:var(--r); transition:border-color .15s, background .15s; }
+.crec:hover{ border-color:var(--line-2); background:var(--paper-2); }
+.crec__ph{ width:54px; height:54px; border-radius:var(--r-sm); border:1px solid var(--line); background:var(--paper-3); display:grid; place-items:center; font-family:var(--font-mono); font-size:9px; color:var(--mute); text-transform:uppercase; flex-shrink:0; }
+.crec__b{ flex:1; min-width:0; }
+.crec__b .br{ font-family:var(--font-mono); font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--blue); }
+.crec__b b{ font-weight:600; font-size:13.5px; display:block; }
+.crec__b .pr{ font-family:var(--font-display); font-weight:800; font-size:15px; }
+.crec__add{ width:36px; height:36px; border-radius:var(--r-sm); background:var(--ink); color:#fff; display:grid; place-items:center; flex-shrink:0; transition:background .15s; }
+.crec__add:hover{ background:var(--blue); } .crec__add svg{ width:17px; height:17px; }
+
+/* ---------- Tier / margin progress (gradient panel) ---------- */
+.dprog__track{ height:6px; border-radius:999px; background:rgba(255,255,255,.18); overflow:hidden; }
+.dprog__fill{ height:100%; border-radius:999px; background:#fff; }
+.dprog__lab{ display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:10px; color:#C5D2F5; margin-top:7px; letter-spacing:.04em; }
+
+/* ---------- Wholesale tables (price list, bulk order, invoices) ---------- */
+.dtable{ width:100%; border-collapse:collapse; }
+.dtable th{ font-family:var(--font-mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--steel); text-align:left; padding:10px 12px; border-bottom:1px solid var(--line-2); white-space:nowrap; }
+.dtable td{ padding:13px 12px; border-bottom:1px solid var(--line); font-size:14px; vertical-align:middle; }
+.dtable tr:last-child td{ border-bottom:none; }
+.dtable .num{ text-align:right; font-family:var(--font-display); font-weight:700; white-space:nowrap; }
+.dtable .mono{ font-family:var(--font-mono); font-size:12px; color:var(--steel); }
+.dtable .pname b{ font-weight:600; font-size:14px; display:block; }
+.dtable .pname span{ font-family:var(--font-mono); font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--blue); }
+.dtable .qty-in{ width:74px; padding:9px 10px; border:1px solid var(--line-2); border-radius:var(--r-sm); font-family:var(--font-mono); font-size:14px; text-align:center; }
+.dtable .qty-in:focus{ outline:none; border-color:var(--blue); }
+.dwrap{ overflow-x:auto; }
+
+/* margin pill in the price list */
+.dmargin{ display:inline-block; font-family:var(--font-mono); font-size:11px; font-weight:700; padding:3px 9px; border-radius:999px; background:#E4F7EC; color:#1FA855; }
+
+/* dealer sub-nav under the page head */
+.dnav{ display:flex; gap:8px; flex-wrap:wrap; margin-top:22px; }
+.dnav a{ font-family:var(--font-display); font-weight:700; font-size:13px; text-transform:uppercase; letter-spacing:.03em; padding:9px 16px; border:1px solid rgba(255,255,255,.25); color:#fff; border-radius:999px; transition:all .15s; }
+.dnav a:hover{ border-color:#fff; }
+.dnav a.active{ background:#fff; color:var(--ink); border-color:transparent; }
+
+/* bulk-order summary card */
+.dsummary{ position:sticky; top:90px; }
+.dsummary .row{ display:flex; justify-content:space-between; font-size:14px; padding:9px 0; border-bottom:1px solid var(--line); }
+.dsummary .row .k{ color:var(--steel); }
+.dsummary .row .v{ font-weight:600; }
+.dsummary .row.total{ border-bottom:none; padding-top:14px; }
+.dsummary .row.total .k{ font-family:var(--font-display); font-weight:800; text-transform:uppercase; color:var(--ink); }
+.dsummary .row.total .v{ font-family:var(--font-display); font-weight:800; font-size:22px; }

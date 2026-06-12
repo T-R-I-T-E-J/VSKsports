@@ -1,0 +1,213 @@
+// VSK Sports — transactional mailer.
+// Zero-dependency by design: in dev (no SMTP_* env) emails are "delivered" to
+// the console; every send is recorded as an EmailLog row either way. A real
+// SMTP/provider transport can be plugged in later behind the same interface
+// without touching callers.
+
+import { prisma } from "@/lib/db";
+import type { EmailType } from "@prisma/client";
+import {
+  orderConfirmation,
+  shippingUpdate,
+  welcome,
+  reviewRequest,
+} from "@/lib/email/templates";
+
+export type SendEmailInput = {
+  to: string;
+  type: EmailType;
+  subject: string;
+  html: string;
+  orderId?: string;
+};
+
+export type SendEmailResult = { ok: boolean; logId?: string };
+
+// ------------------------------------------------------------
+// Transport interface — implement this to swap in a real provider.
+// ------------------------------------------------------------
+interface EmailTransport {
+  name: string;
+  deliver(input: SendEmailInput): Promise<void>;
+}
+
+/** Dev transport: logs a labelled summary to the server console. */
+const consoleTransport: EmailTransport = {
+  name: "console",
+  async deliver(input) {
+    console.log(
+      [
+        "",
+        "┌──────────────────────────────────────────────",
+        "│ 📧 [DEV EMAIL — console transport, not sent]",
+        `│ To:      ${input.to}`,
+        `│ Type:    ${input.type}`,
+        `│ Subject: ${input.subject}`,
+        input.orderId ? `│ Order:   ${input.orderId}` : null,
+        `│ HTML:    ${input.html.length} bytes (preview at /dev/emails)`,
+        "└──────────────────────────────────────────────",
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    );
+  },
+};
+
+/**
+ * SMTP/provider hook — STUB. Selected when SMTP_HOST is configured.
+ * Wave 2+: replace the body with a real transport, e.g.
+ *
+ *   import nodemailer from "nodemailer";
+ *   const t = nodemailer.createTransport({
+ *     host: process.env.SMTP_HOST,
+ *     port: Number(process.env.SMTP_PORT ?? 587),
+ *     auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+ *   });
+ *   await t.sendMail({ from: process.env.SMTP_FROM, to: input.to,
+ *                      subject: input.subject, html: input.html });
+ *
+ * (nodemailer deliberately NOT installed this wave — no new dependencies.)
+ */
+const smtpTransport: EmailTransport = {
+  name: "smtp-stub",
+  async deliver(input) {
+    console.log(
+      `📧 [SMTP STUB] would send via ${process.env.SMTP_HOST} → to=${input.to} type=${input.type} subject="${input.subject}"`,
+    );
+  },
+};
+
+function pickTransport(): EmailTransport {
+  return process.env.SMTP_HOST ? smtpTransport : consoleTransport;
+}
+
+/**
+ * Send a transactional email. ALWAYS writes an EmailLog row (SENT on success,
+ * FAILED on transport error). Never throws — callers must not have their main
+ * flow (checkout, webhooks) broken by email problems.
+ */
+export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult> {
+  let delivered = false;
+  try {
+    await pickTransport().deliver(input);
+    delivered = true;
+  } catch (err) {
+    console.error("[mailer] transport failed:", err);
+  }
+  try {
+    const log = await prisma.emailLog.create({
+      data: {
+        to: input.to,
+        type: input.type,
+        subject: input.subject,
+        status: delivered ? "SENT" : "FAILED",
+        orderId: input.orderId ?? null,
+      },
+    });
+    return { ok: delivered, logId: log.id };
+  } catch (err) {
+    console.error("[mailer] failed to write EmailLog:", err);
+    return { ok: delivered };
+  }
+}
+
+// ------------------------------------------------------------
+// High-level helpers
+// ------------------------------------------------------------
+
+/**
+ * Load an order (items + user) and send its ORDER_CONFIRMATION email.
+ * With `skipIfLogged`, does nothing when a confirmation was already logged
+ * for the order (keeps webhook + checkout double-firing idempotent).
+ */
+export async function sendOrderConfirmationEmail(
+  orderId: string,
+  opts: { skipIfLogged?: boolean } = {},
+): Promise<SendEmailResult> {
+  try {
+    if (opts.skipIfLogged) {
+      const existing = await prisma.emailLog.findFirst({
+        where: { orderId, type: "ORDER_CONFIRMATION" },
+        select: { id: true },
+      });
+      if (existing) return { ok: true, logId: existing.id };
+    }
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: { items: true, user: true },
+    });
+    if (!order?.user?.email) return { ok: false };
+    const tpl = orderConfirmation(order, order.user);
+    return sendEmail({
+      to: order.user.email,
+      type: "ORDER_CONFIRMATION",
+      subject: tpl.subject,
+      html: tpl.html,
+      orderId: order.id,
+    });
+  } catch (err) {
+    console.error("[mailer] sendOrderConfirmationEmail failed:", err);
+    return { ok: false };
+  }
+}
+
+/**
+ * SHIPPING_UPDATE — exported for the admin order-status flow.
+ * NOTE (Wave 2): not yet wired into admin pages; call this when an order is
+ * marked SHIPPED with a tracking number.
+ */
+export async function sendShippingUpdate(
+  orderId: string,
+  trackingNumber: string,
+  courier: string,
+): Promise<SendEmailResult> {
+  try {
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: { user: true, address: true },
+    });
+    if (!order?.user?.email) return { ok: false };
+    const note = order.address
+      ? `Delivering to ${order.address.line1}, ${order.address.city} ${order.address.pincode}`
+      : undefined;
+    const tpl = shippingUpdate(order, trackingNumber, courier, order.user, note);
+    return sendEmail({
+      to: order.user.email,
+      type: "SHIPPING_UPDATE",
+      subject: tpl.subject,
+      html: tpl.html,
+      orderId: order.id,
+    });
+  } catch (err) {
+    console.error("[mailer] sendShippingUpdate failed:", err);
+    return { ok: false };
+  }
+}
+
+/**
+ * WELCOME — exported helper. NOTE (Wave 2): no registration action exists yet
+ * in this codebase; wire this into the register flow when it lands.
+ */
+export async function sendWelcomeEmail(user: {
+  email: string;
+  name?: string | null;
+}): Promise<SendEmailResult> {
+  const tpl = welcome(user);
+  return sendEmail({ to: user.email, type: "WELCOME", subject: tpl.subject, html: tpl.html });
+}
+
+/** REVIEW_REQUEST — exported helper for the post-delivery flow (Wave 2). */
+export async function sendReviewRequest(
+  user: { email: string; name?: string | null },
+  product: { name: string; slug: string },
+  orderId?: string,
+): Promise<SendEmailResult> {
+  const tpl = reviewRequest(user, product);
+  return sendEmail({
+    to: user.email,
+    type: "REVIEW_REQUEST",
+    subject: tpl.subject,
+    html: tpl.html,
+    orderId,
+  });
+}

@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { verifyWebhookSignature } from "@/lib/razorpay";
 import { prisma } from "@/lib/db";
+import { sendOrderConfirmationEmail } from "@/lib/email/mailer";
 
 // Razorpay webhook — the server-side source of truth for payment status.
 export async function POST(req: NextRequest) {
@@ -34,6 +35,15 @@ export async function POST(req: NextRequest) {
         where: { razorpayOrderId, paymentStatus: { not: "PAID" } },
         data: { paymentStatus: "PAID", status: "PROCESSING", razorpayPaymentId: paymentId },
       });
+      // Order confirmation email — idempotent via EmailLog check (the
+      // checkout action may have already sent it). Never fails the webhook.
+      const orders = await prisma.order.findMany({
+        where: { razorpayOrderId },
+        select: { id: true },
+      });
+      for (const o of orders) {
+        await sendOrderConfirmationEmail(o.id, { skipIfLogged: true });
+      }
     }
   }
 
