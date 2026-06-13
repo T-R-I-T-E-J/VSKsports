@@ -1,0 +1,25 @@
+{
+  "header": {
+    "gstRegistered": "GST Registered Supplier",
+    "nationwideDelivery": "Nationwide Delivery Across India",
+    "signIn": "Sign In",
+    "becomeDealer": "Become a Dealer",
+    "shopNow": "Shop Now"
+  },
+  "common": {
+    "loading": "Loading…",
+    "backToHome": "Back to Home",
+    "browseShop": "Browse Shop"
+  },
+  "notFound": {
+    "eyebrow": "Error 404",
+    "title": "Off Target",
+    "body": "This page missed the mark — it may have moved or never existed. Let's get you back on the line."
+  },
+  "error": {
+    "eyebrow": "System Error",
+    "title": "Something misfired",
+    "body": "An unexpected error occurred on our end. Try again, or head back to safer ground.",
+    "retry": "Try again"
+  }
+}

@@ -7,11 +7,12 @@ import { cn } from "@/lib/cn";
 import { Brand } from "./Brand";
 import { Button } from "@/components/ui/Button";
 import { STOREFRONT_NAV } from "@/lib/nav";
+import { useI18n } from "@/components/i18n/I18nProvider";
+import { LocaleSwitch } from "@/components/i18n/LocaleSwitch";
 import {
   IconCheck,
   IconTruck,
   IconPhone,
-  IconGlobe,
   IconSearch,
   IconUser,
   IconHeart,
@@ -26,6 +27,7 @@ const iconBtn =
 
 export function SiteHeader({ cartCount = 0 }: { cartCount?: number }) {
   const pathname = usePathname();
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(href + "/");
@@ -45,11 +47,11 @@ export function SiteHeader({ cartCount = 0 }: { cartCount?: number }) {
           <div className="flex items-center gap-6">
             <span className="inline-flex items-center gap-2">
               <IconCheck width={13} height={13} />
-              GST Registered Supplier
+              {t("header.gstRegistered")}
             </span>
             <span className="inline-flex items-center gap-2">
               <IconTruck width={13} height={13} />
-              Nationwide Delivery Across India
+              {t("header.nationwideDelivery")}
             </span>
             <span className="inline-flex items-center gap-2">
               <IconPhone width={13} height={13} />
@@ -58,15 +60,12 @@ export function SiteHeader({ cartCount = 0 }: { cartCount?: number }) {
           </div>
           <div className="flex items-center gap-5">
             <Link href="/login" className="transition-colors hover:text-white">
-              Sign In
+              {t("header.signIn")}
             </Link>
             <Link href="/dealers" className="transition-colors hover:text-white">
-              Become a Dealer
+              {t("header.becomeDealer")}
             </Link>
-            <span className="inline-flex items-center gap-1.5">
-              <IconGlobe width={13} height={13} />
-              EN
-            </span>
+            <LocaleSwitch />
           </div>
         </div>
       </div>
