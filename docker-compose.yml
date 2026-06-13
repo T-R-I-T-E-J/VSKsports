@@ -7,9 +7,11 @@ services:
       POSTGRES_USER: vsk
       POSTGRES_PASSWORD: vsk
       POSTGRES_DB: vsk_sports
-    # Host 55432 chosen to avoid a native Postgres already on 5432/5433.
+    # Host 5544 -> container 5432. 5544 avoids native Postgres on 5432/5433 and
+    # stays below Windows' WinNAT-reserved ephemeral range (which can grab 55432+,
+    # producing "bind: forbidden by its access permissions" on docker start).
     ports:
-      - "55432:5432"
+      - "5544:5432"
     volumes:
       - vsk_pgdata:/var/lib/postgresql/data
     healthcheck:

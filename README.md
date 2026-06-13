@@ -2,7 +2,27 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
+### Database (Postgres via Docker)
+
+Postgres runs in Docker, published on host port **5544** (→ container 5432). The
+port lives in `docker-compose.yml` and `.env` (`DATABASE_URL`) — no per-session
+override is needed.
+
+```bash
+cp .env.example .env   # first time only
+npm run db:up          # start Postgres (docker compose, waits until healthy)
+npm run db:migrate     # apply migrations
+npm run db:seed        # optional: seed sample data
+```
+
+> **Why port 5544?** 5432/5433 are usually taken by a native Postgres, and 55432
+> (a previous choice) falls inside Windows' WinNAT-reserved ephemeral range, where
+> Docker can fail to bind it with `bind: ... forbidden by its access permissions`.
+> 5544 sits below that range and binds reliably.
+
+### Dev server
+
+Then, run the development server:
 
 ```bash
 npm run dev
