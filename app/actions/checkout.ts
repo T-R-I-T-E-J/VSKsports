@@ -11,6 +11,7 @@ import {
   verifyPaymentSignature,
   RAZORPAY_KEY_ID,
 } from "@/lib/razorpay";
+import { sendOrderConfirmationEmail } from "@/lib/email/mailer";
 
 async function uniqueOrderNumber(): Promise<string> {
   const year = new Date().getFullYear();
@@ -96,6 +97,11 @@ async function finalizeOrder(orderId: string, paymentId: string) {
   });
   const cart = await getCart();
   if (cart) await prisma.cartItem.deleteMany({ where: { cartId: cart.id } });
+  // Fire-and-forget: never block or fail checkout on email problems.
+  // (sendOrderConfirmationEmail also never throws; double safety.)
+  void sendOrderConfirmationEmail(orderId, { skipIfLogged: true }).catch((err) =>
+    console.error("[checkout] order confirmation email failed:", err),
+  );
   revalidatePath("/", "layout");
   revalidatePath("/cart");
 }
