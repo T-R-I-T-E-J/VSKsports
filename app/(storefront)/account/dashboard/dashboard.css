@@ -1,0 +1,77 @@
+/* Customer dashboard — ported from design handoff assets/customer.css
+   (font vars renamed: --display→--font-display, --mono→--font-mono).
+   Only the panel/tile/row components are ported; the page renders inside the
+   storefront chrome rather than the standalone portal shell. */
+
+/* welcome / profile banner (from .cust-prof) */
+.cust-prof{ padding:26px 30px; border-radius:var(--r-lg); background:linear-gradient(150deg,var(--blue-ink),var(--blue)); color:#fff; position:relative; overflow:hidden; }
+.cust-prof__rings{ position:absolute; top:-50px; right:-50px; width:160px; height:160px; opacity:.2; }
+.cust-prof__top{ display:flex; align-items:center; gap:14px; position:relative; z-index:2; }
+.cust-prof__av{ width:52px; height:52px; border-radius:50%; background:rgba(255,255,255,.16); border:1.5px solid rgba(255,255,255,.3); display:grid; place-items:center; font-family:var(--font-display); font-weight:800; font-size:19px; }
+.cust-prof__top b{ font-family:var(--font-display); font-weight:700; font-size:20px; text-transform:uppercase; display:block; line-height:1; }
+.cust-prof__tier{ font-family:var(--font-mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:#9DB2FF; margin-top:5px; display:inline-flex; align-items:center; gap:5px; }
+.cust-prof__tier svg{ width:11px; height:11px; }
+.cust-prof__bar{ position:relative; z-index:2; margin-top:16px; max-width:420px; }
+.cust-prof__bartrack{ height:6px; border-radius:999px; background:rgba(255,255,255,.18); overflow:hidden; }
+.cust-prof__barfill{ height:100%; border-radius:999px; background:#fff; }
+.cust-prof__barlab{ display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:10px; color:#C5D2F5; margin-top:7px; letter-spacing:.04em; }
+
+/* KPI tiles */
+.ctiles{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-top:16px; }
+.ctile{ background:#fff; border:1px solid var(--line); border-radius:var(--r-lg); padding:20px; display:flex; align-items:center; gap:16px; transition:box-shadow .2s, transform .2s; }
+.ctile:hover{ box-shadow:var(--shadow-1); transform:translateY(-2px); }
+.ctile__ic{ width:48px; height:48px; border-radius:13px; display:grid; place-items:center; flex-shrink:0; }
+.ctile__ic svg{ width:24px; height:24px; }
+.ctile__ic.blue{ background:var(--blue-wash); color:var(--blue); }
+.ctile__ic.red{ background:var(--red-wash); color:var(--red); }
+.ctile__ic.green{ background:#E4F7EC; color:#1FA855; }
+.ctile__ic.amber{ background:#FDF3DC; color:#C8961E; }
+.ctile b{ font-family:var(--font-display); font-weight:800; font-size:28px; line-height:1; display:block; }
+.ctile span{ font-family:var(--font-mono); font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--steel); }
+@media(max-width:1100px){ .ctiles{ grid-template-columns:repeat(2,1fr); } }
+@media(max-width:520px){ .ctiles{ grid-template-columns:1fr; } }
+
+/* Panels */
+.cpanel{ background:#fff; border:1px solid var(--line); border-radius:var(--r-lg); }
+.cpanel__head{ display:flex; align-items:center; justify-content:space-between; gap:14px; padding:18px 22px; border-bottom:1px solid var(--line); }
+.cpanel__head h3{ font-family:var(--font-display); font-weight:800; font-size:19px; text-transform:uppercase; letter-spacing:-.005em; line-height:1.16; }
+.cpanel__head a{ font-family:var(--font-display); font-weight:700; font-size:13px; text-transform:uppercase; letter-spacing:.04em; color:var(--blue); display:inline-flex; align-items:center; gap:6px; white-space:nowrap; }
+.cpanel__body{ padding:22px; }
+.cgrid{ display:grid; gap:16px; margin-top:16px; }
+.cgrid--2{ grid-template-columns:1.5fr 1fr; }
+@media(max-width:980px){ .cgrid--2{ grid-template-columns:1fr; } }
+
+/* order list rows */
+.corder{ display:grid; grid-template-columns:auto 1fr auto; gap:14px; align-items:center; padding:15px 0; border-bottom:1px solid var(--line); }
+.corder:last-child{ border-bottom:none; }
+.corder__img{ width:48px; height:48px; border:1px solid var(--line); border-radius:var(--r-sm); overflow:hidden; }
+.corder__b b{ font-weight:600; font-size:14.5px; display:block; }
+.corder__b span{ font-family:var(--font-mono); font-size:11px; color:var(--mute); }
+.corder__r{ text-align:right; }
+.corder__r b{ font-family:var(--font-display); font-weight:800; font-size:16px; display:block; }
+
+/* enrolled (training/events) */
+.enrol{ display:flex; align-items:center; gap:14px; padding:14px 0; border-bottom:1px solid var(--line); }
+.enrol:last-child{ border-bottom:none; }
+.enrol__date{ width:54px; text-align:center; border:1px solid var(--line); border-radius:var(--r); padding:7px 4px; flex-shrink:0; background:var(--paper-2); }
+.enrol__date b{ font-family:var(--font-display); font-weight:800; font-size:20px; line-height:1; display:block; }
+.enrol__date span{ font-family:var(--font-mono); font-size:9px; letter-spacing:.1em; text-transform:uppercase; color:var(--steel); }
+.enrol__b{ flex:1; }
+.enrol__b b{ font-family:var(--font-display); font-weight:700; font-size:16px; text-transform:uppercase; display:block; }
+.enrol__b span{ font-family:var(--font-mono); font-size:11px; color:var(--steel); letter-spacing:.04em; }
+
+/* quick links */
+.qlinks{ display:grid; gap:10px; }
+.qlinks a{ display:flex; align-items:center; gap:12px; padding:12px 14px; border:1px solid var(--line); border-radius:var(--r); font-weight:600; font-size:14.5px; color:var(--ink-2); transition:border-color .15s, color .15s, background .15s; }
+.qlinks a:hover{ border-color:var(--blue); color:var(--blue); background:var(--blue-wash); }
+.qlinks a svg{ width:18px; height:18px; color:var(--steel); }
+.qlinks a:hover svg{ color:var(--blue); }
+
+/* reward ledger mini rows */
+.rwrow{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 0; border-bottom:1px solid var(--line); }
+.rwrow:last-child{ border-bottom:none; }
+.rwrow .rs{ font-size:14px; color:var(--ink-2); }
+.rwrow .rd{ font-family:var(--font-mono); font-size:10.5px; color:var(--mute); display:block; margin-top:2px; }
+.rwrow .pts{ font-family:var(--font-display); font-weight:800; font-size:16px; }
+.rwrow .pts.pos{ color:#1FA855; }
+.rwrow .pts.neg{ color:var(--red); }

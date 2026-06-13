@@ -1,0 +1,19 @@
+/* Write a Review — ported from the reference page's inline styles
+   (font vars renamed to the app's --font-* names). */
+.star-pick{ display:flex; gap:6px; }
+.star-pick button{ background:none; border:none; cursor:pointer; padding:2px; color:var(--line-2); transition:color .12s, transform .12s; }
+.star-pick button svg{ width:38px; height:38px; }
+.star-pick button.on{ color:var(--amber); }
+.star-pick button:hover{ transform:scale(1.12); }
+.rate-row{ display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid var(--line); }
+.rate-row:last-child{ border-bottom:none; }
+.rate-row .ministar{ display:flex; gap:3px; }
+.rate-row .ministar button{ background:none; border:none; cursor:pointer; color:var(--line-2); padding:1px; }
+.rate-row .ministar button.on{ color:var(--amber); }
+.rate-row .ministar svg{ width:20px; height:20px; }
+.dropz-row{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+.pick-row{ display:flex; align-items:center; gap:16px; padding:14px 0; border-bottom:1px solid var(--line); }
+.pick-row:last-child{ border-bottom:none; }
+.rsel{ appearance:none; width:20px; height:20px; border:1.5px solid var(--line-2); border-radius:5px; position:relative; cursor:pointer; transition:all .15s; flex-shrink:0; }
+.rsel:checked{ background:var(--blue); border-color:var(--blue); }
+.rsel:checked::after{ content:""; position:absolute; left:6px; top:2.5px; width:5px; height:9px; border-right:2px solid #fff; border-bottom:2px solid #fff; transform:rotate(45deg); }
