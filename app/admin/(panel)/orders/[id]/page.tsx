@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { formatINR } from "@/lib/format";
+import { GST_LABEL } from "@/lib/pricing";
 import {
   PageHead,
   Crumb,
@@ -91,7 +92,7 @@ export default async function AdminOrderDetail({ params }: { params: Promise<{ i
               <span>Shipping</span>
               {order.shippingInr === 0 ? <b style={{ color: "#1FA855" }}>FREE</b> : <b>{formatINR(order.shippingInr)}</b>}
             </div>
-            <div className="od-sum"><span>GST (18%)</span><b>{formatINR(order.gstInr)}</b></div>
+            <div className="od-sum"><span>{GST_LABEL}</span><b>{formatINR(order.gstInr)}</b></div>
             {order.discountInr > 0 && (
               <div className="od-sum"><span>Discount</span><b style={{ color: "#1FA855" }}>−{formatINR(order.discountInr)}</b></div>
             )}

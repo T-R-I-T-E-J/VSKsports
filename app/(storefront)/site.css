@@ -405,6 +405,10 @@
 .article h3{ font-family:var(--font-display); font-weight:700; font-size:22px; text-transform:uppercase; margin:28px 0 12px; }
 .article ul{ margin:0 0 22px; padding-left:22px; } .article li{ font-size:17px; line-height:1.7; color:var(--ink-2); margin-bottom:8px; }
 .article blockquote{ border-left:3px solid var(--blue); padding:6px 0 6px 22px; margin:26px 0; font-family:var(--font-display); font-weight:600; font-size:23px; line-height:1.3; text-transform:uppercase; letter-spacing:-.01em; }
+/* Legal/policy variant: sentence-case headings & quotes — all-caps is too aggressive for dense statutory prose. */
+.article.article--legal h2,
+.article.article--legal h3,
+.article.article--legal blockquote{ text-transform:none; letter-spacing:normal; }
 
 /* ---------- FAQ / accordion ---------- */
 .faq-item{ border-bottom:1px solid var(--line); }

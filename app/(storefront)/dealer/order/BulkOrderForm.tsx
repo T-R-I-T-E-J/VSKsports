@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
-import { computeTotals } from "@/lib/pricing";
+import { computeTotals, GST_LABEL } from "@/lib/pricing";
 import { formatINR } from "@/lib/format";
 import { placeBulkOrder } from "../actions";
 
@@ -162,7 +162,7 @@ export function BulkOrderForm({
             <span className="v">{formatINR(totals.subtotalInr)}</span>
           </div>
           <div className="row">
-            <span className="k">GST (18%)</span>
+            <span className="k">{GST_LABEL}</span>
             <span className="v">{formatINR(totals.gstInr)}</span>
           </div>
           <div className="row">

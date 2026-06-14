@@ -11,6 +11,7 @@ import {
 } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import data from "./seed-data.json";
+import { GST_RATE } from "../lib/pricing";
 
 const prisma = new PrismaClient();
 const DB = data as unknown as Record<string, any[]>;
@@ -240,7 +241,9 @@ async function main() {
   for (const row of get("Admin-Orders.html::O")) {
     const [num, dateStr, customer, , , payStatus, , fulfillStatus, total] = row;
     const totalInr = parsePrice(total);
-    const subtotalInr = Math.round(totalInr / 1.18);
+    // Forward-derive a correct GST_RATE split of the historical total so seeded
+    // orders match the live rate (was /1.18, which baked in the old 18%).
+    const subtotalInr = Math.round(totalInr / (1 + GST_RATE));
     const gstInr = totalInr - subtotalInr;
     const prod = products[oi % Math.max(products.length, 1)];
     const created = new Date(dateStr);

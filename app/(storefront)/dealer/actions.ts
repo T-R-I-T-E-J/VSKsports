@@ -51,7 +51,7 @@ export async function placeBulkOrder(lines: BulkLine[]): Promise<BulkOrderResult
     }
   }
 
-  // Wholesale pricing: dealerPriceInr per unit; GST 18% via computeTotals.
+  // Wholesale pricing: dealerPriceInr per unit; GST 5% via computeTotals.
   const subtotal = clean.reduce(
     (s, l) => s + (byId.get(l.productId)!.dealerPriceInr as number) * l.quantity,
     0,

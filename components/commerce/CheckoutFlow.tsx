@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { computeTotals, type ShippingMethod } from "@/lib/pricing";
+import { computeTotals, GST_LABEL, type ShippingMethod } from "@/lib/pricing";
 import { formatINR } from "@/lib/format";
 import { MediaImage } from "@/components/motifs/MediaImage";
 import { startCheckout, confirmMockPayment, confirmRazorpayPayment } from "@/app/actions/checkout";
@@ -290,7 +290,7 @@ export function CheckoutFlow({
               {totals.shippingInr === 0 ? "FREE" : formatINR(totals.shippingInr)}
             </b>
           </div>
-          <div className="sumline"><span>GST (18%)</span><b>{formatINR(totals.gstInr)}</b></div>
+          <div className="sumline"><span>{GST_LABEL}</span><b>{formatINR(totals.gstInr)}</b></div>
           <div className="sumtotal"><span>Total</span><b>{formatINR(totals.totalInr)}</b></div>
           <p className="mono-tag" style={{ margin: "8px 0 18px" }}>Inclusive of all taxes</p>
 

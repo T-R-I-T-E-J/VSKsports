@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getCart } from "@/lib/cart";
-import { computeTotals } from "@/lib/pricing";
+import { computeTotals, GST_LABEL } from "@/lib/pricing";
 import { formatINR } from "@/lib/format";
 import { CartRow } from "@/components/commerce/CartRow";
 
@@ -88,7 +88,7 @@ export default async function CartPage() {
                     {totals.shippingInr === 0 ? "FREE" : formatINR(totals.shippingInr)}
                   </b>
                 </div>
-                <div className="sumline"><span>GST (18%)</span><b>{formatINR(totals.gstInr)}</b></div>
+                <div className="sumline"><span>{GST_LABEL}</span><b>{formatINR(totals.gstInr)}</b></div>
                 <div className="promo">
                   <input placeholder="Promo code" />
                   <button className="btn btn--ghost btn--sm">Apply</button>

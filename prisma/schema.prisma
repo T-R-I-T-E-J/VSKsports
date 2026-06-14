@@ -263,7 +263,7 @@ model Order {
   status            OrderStatus   @default(PENDING)
   paymentStatus     PaymentStatus @default(PENDING)
   subtotalInr       Int
-  gstInr            Int           @default(0) // 18%
+  gstInr            Int           @default(0) // computed via computeTotals (GST_RATE)
   shippingInr       Int           @default(0)
   discountInr       Int           @default(0)
   totalInr          Int

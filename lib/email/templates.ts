@@ -5,6 +5,7 @@
 // buttons and a paper footer.
 
 import { formatINR } from "@/lib/format";
+import { GST_LABEL } from "@/lib/pricing";
 
 // Brand palette (resolved values of the CSS custom properties in globals.css)
 const INK = "#0b0f17";
@@ -137,7 +138,7 @@ export function orderConfirmation(order: OrderEmailData, user: { name?: string |
   const totalsRows = [
     row("Subtotal", formatINR(order.subtotalInr)),
     row("Shipping", order.shippingInr === 0 ? `<span style="color:${GREEN_OK};">FREE</span>` : formatINR(order.shippingInr)),
-    row("GST (18%)", formatINR(order.gstInr)),
+    row(GST_LABEL, formatINR(order.gstInr)),
     order.discountInr ? row("Discount", `−${formatINR(order.discountInr)}`) : "",
     row("Total", formatINR(order.totalInr), { bg: PAPER_2, strong: true }),
   ].join("");
