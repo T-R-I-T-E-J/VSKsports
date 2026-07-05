@@ -2,7 +2,8 @@ import { Fragment } from "react";
 import { prisma } from "@/lib/db";
 import { PageHeader } from "@/components/storefront/PageHeader";
 import { MediaImage } from "@/components/motifs/MediaImage";
-import { SubmitForm } from "@/components/storefront/SubmitForm";
+import { submitDealerApplication } from "@/app/actions/dealer";
+import { DealerDocUploader } from "./DealerDocUploader";
 
 export const metadata = { title: "Dealer Network" };
 
@@ -29,8 +30,13 @@ const STEPS: [string, string, string][] = [
   ["04", "Sell & Grow", "Get marketing support and start earning."],
 ];
 
-export default async function DealersPage() {
+export default async function DealersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ applied?: string; error?: string }>;
+}) {
   const dealers = await prisma.dealer.findMany({ orderBy: { createdAt: "asc" } });
+  const { applied, error } = await searchParams;
 
   return (
     <>
@@ -90,7 +96,7 @@ export default async function DealersPage() {
               <h2 className="h-sec" style={{ fontSize: 40 }}>Onboard in 48 hours</h2>
             </div>
           </div>
-          <div className="benefits" style={{ gridTemplateColumns: "repeat(4,1fr)" }}>
+          <div className="benefits stack-sm" style={{ gridTemplateColumns: "repeat(4,1fr)" }}>
             {STEPS.map(([no, t, p]) => (
               <div className="benefit" key={no}>
                 <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 40, color: "var(--blue)", marginBottom: 10 }}>{no}</div>
@@ -110,7 +116,7 @@ export default async function DealersPage() {
               <h2 className="h-sec" style={{ fontSize: 40 }}>Find a dealer near you</h2>
             </div>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "340px 1fr", gap: 24, alignItems: "start" }}>
+          <div className="stack-sm" style={{ display: "grid", gridTemplateColumns: "340px 1fr", gap: 24, alignItems: "start" }}>
             <div>
               <div className="field" style={{ marginBottom: 16 }}>
                 <label>Search by city or PIN</label>
@@ -145,20 +151,39 @@ export default async function DealersPage() {
             <h2 className="h-sec" style={{ fontSize: 38, marginTop: 14 }}>Apply now</h2>
             <p className="lead" style={{ margin: "14px auto 0" }}>Takes 3 minutes. We&apos;ll get back to you within 48 hours.</p>
           </div>
-          <SubmitForm className="card card--pad" style={{ display: "grid", gap: 18 }} message="Application received! Our partnerships team will call you within 48 hours.">
-            <div className="form-grid">
-              <div className="field"><label>Business name <span className="req">*</span></label><input required /></div>
-              <div className="field"><label>Contact person <span className="req">*</span></label><input required /></div>
-              <div className="field"><label>Phone <span className="req">*</span></label><input placeholder="+91" required /></div>
-              <div className="field"><label>Email</label><input type="email" /></div>
-              <div className="field"><label>City <span className="req">*</span></label><input required /></div>
-              <div className="field"><label>GST Number</label><input placeholder="GSTIN" /></div>
-              <div className="field"><label>Business type</label><select><option>Retail Store</option><option>Shooting Academy</option><option>Sports Distributor</option><option>Online Seller</option></select></div>
-              <div className="field"><label>Years in business</label><select><option>New / Starting up</option><option>1–3 years</option><option>3–10 years</option><option>10+ years</option></select></div>
-              <div className="field field--full"><label>Tell us about your business</label><textarea placeholder="Your market, current products, expected volumes…" /></div>
+          {applied ? (
+            <div
+              role="status"
+              className="card card--pad"
+              style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "center", color: "#1FA855", fontFamily: "var(--font-mono)", fontSize: 13 }}
+            >
+              <svg viewBox="0 0 24 24" width={18} height={18} fill="none" stroke="currentColor" strokeWidth={2}>
+                <path d="M5 13l4 4L19 7" />
+              </svg>
+              Application received! Our partnerships team will call you within 48 hours.
             </div>
-            <button className="btn btn--primary" style={{ justifyContent: "center" }}>Submit Application</button>
-          </SubmitForm>
+          ) : (
+            <form className="card card--pad" style={{ display: "grid", gap: 18 }} action={submitDealerApplication}>
+              {error === "missing" && (
+                <p role="alert" style={{ color: "var(--red)", fontSize: 13, margin: 0 }}>
+                  Please fill in your business name, contact person and email.
+                </p>
+              )}
+              <div className="form-grid">
+                <div className="field"><label>Business name <span className="req">*</span></label><input name="business" required /></div>
+                <div className="field"><label>Contact person <span className="req">*</span></label><input name="contactName" required /></div>
+                <div className="field"><label>Phone <span className="req">*</span></label><input name="phone" placeholder="+91" required /></div>
+                <div className="field"><label>Email <span className="req">*</span></label><input name="email" type="email" required /></div>
+                <div className="field"><label>City <span className="req">*</span></label><input name="city" required /></div>
+                <div className="field"><label>GST Number</label><input name="gstNumber" placeholder="GSTIN" /></div>
+                <div className="field"><label>Business type</label><select name="businessType"><option>Retail Store</option><option>Shooting Academy</option><option>Sports Distributor</option><option>Online Seller</option></select></div>
+                <div className="field"><label>Years in business</label><select name="yearsInBusiness"><option>New / Starting up</option><option>1–3 years</option><option>3–10 years</option><option>10+ years</option></select></div>
+                <div className="field field--full"><label>Tell us about your business</label><textarea name="message" placeholder="Your market, current products, expected volumes…" /></div>
+                <DealerDocUploader />
+              </div>
+              <button className="btn btn--primary" style={{ justifyContent: "center" }}>Submit Application</button>
+            </form>
+          )}
         </div>
       </section>
     </>

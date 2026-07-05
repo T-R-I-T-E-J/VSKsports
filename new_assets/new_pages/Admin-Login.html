@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Staff Sign In — VSK Admin</title>
+<link rel="stylesheet" href="assets/vsk.css">
+<link rel="stylesheet" href="assets/auth.css">
+<link rel="icon" href="assets/vsk-logo.png">
+</head>
+<body class="auth">
+<div class="admin-auth">
+  <div class="admin-auth__grid"></div>
+  <svg class="admin-auth__rings" viewBox="0 0 760 760" fill="none"><circle cx="380" cy="380" r="120" stroke="#9DB2FF" stroke-width="1"/><circle cx="380" cy="380" r="210" stroke="#9DB2FF" stroke-width="1"/><circle cx="380" cy="380" r="300" stroke="#9DB2FF" stroke-width="1"/><circle cx="380" cy="380" r="376" stroke="#9DB2FF" stroke-width="1"/><path d="M380 0v760M0 380h760" stroke="#9DB2FF" stroke-width="1"/></svg>
+
+  <a class="admin-auth__back" href="VSK Sports Homepage.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Back to store</a>
+
+  <div class="admin-card">
+    <div class="admin-card__head">
+      <span class="admin-card__mark"><span class="m"><span class="v">V</span><span class="s">S</span>K</span></span>
+      <h1>VSK Admin</h1>
+      <span class="lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>Restricted · Staff Only</span>
+    </div>
+    <div class="admin-card__body">
+      <form onsubmit="return VSKAuth.login('admin');">
+        <div class="auth-field"><label>Work email</label>
+          <div class="auth-ipt"><span class="pre"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 7l10 6 10-6"/></svg></span><input type="email" value="vkumar@vsksports.in"></div>
+        </div>
+        <div class="auth-field"><label>Password</label>
+          <div class="auth-ipt"><span class="pre"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span><input type="password" value="password"><button type="button" class="eye" onclick="const i=this.previousElementSibling;i.type=i.type==='password'?'text':'password';"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+        </div>
+        <div class="twofa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.4 8.5-8 10-4.6-1.5-8-5-8-10V6z"/><path d="M9 12l2 2 4-4"/></svg>Two-factor authentication will be requested after sign in.</div>
+        <div class="auth-row" style="margin-top:18px;">
+          <label class="auth-check"><input type="checkbox">Trust this device</label>
+          <a href="Reset-Password.html" class="auth-forgot">Reset password</a>
+        </div>
+        <button type="submit" class="btn btn--primary btn-full">Sign In to Admin<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+      </form>
+    </div>
+    <div class="admin-card__foot">Protected area · All activity is logged · VSK Sports © 2026</div>
+  </div>
+</div>
+<script src="assets/auth.js" data-vsk-auth></script>
+</body>
+</html>

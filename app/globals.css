@@ -80,6 +80,9 @@
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
+    /* Safety net: never allow the page to scroll sideways on small screens.
+       `clip` (not `hidden`) so it doesn't break position: sticky descendants. */
+    overflow-x: clip;
   }
   body {
     font-family: var(--font-sans);
@@ -89,6 +92,8 @@
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+    max-width: 100%;
+    overflow-x: clip;
   }
   img {
     display: block;

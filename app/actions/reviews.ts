@@ -30,7 +30,7 @@ export async function submitReview(formData: FormData): Promise<void> {
   }
 
   const user = await prisma.user.findUnique({ where: { id: userId } });
-  await prisma.review.create({
+  const review = await prisma.review.create({
     data: {
       productId: orderItem.productId,
       userId,
@@ -42,6 +42,43 @@ export async function submitReview(formData: FormData): Promise<void> {
       orderId: orderItem.order.id,
     },
   });
+
+  // Attach any uploaded review photos. Each hidden `photoIds` input maps to a
+  // File the uploader already created (kind REVIEW_PHOTO). Only attach Files
+  // that exist, are REVIEW_PHOTO, belong to this user, and have a public URL —
+  // then create one ReviewPhoto row per photo with its position preserved.
+  const photoIds = formData
+    .getAll("photoIds")
+    .map((v) => String(v))
+    .filter((v) => v.length > 0);
+
+  if (photoIds.length > 0) {
+    const files = await prisma.file.findMany({
+      where: {
+        id: { in: photoIds },
+        kind: "REVIEW_PHOTO",
+        uploadedById: userId,
+        url: { not: null },
+      },
+      select: { id: true, url: true },
+    });
+    const byId = new Map(files.map((f) => [f.id, f]));
+
+    // Preserve submission order; dedupe; skip Files that failed validation.
+    const seen = new Set<string>();
+    const rows: { reviewId: string; fileId: string; url: string; position: number }[] = [];
+    for (const id of photoIds) {
+      if (seen.has(id)) continue;
+      seen.add(id);
+      const file = byId.get(id);
+      if (!file || !file.url) continue;
+      rows.push({ reviewId: review.id, fileId: file.id, url: file.url, position: rows.length });
+    }
+
+    if (rows.length > 0) {
+      await prisma.reviewPhoto.createMany({ data: rows });
+    }
+  }
 
   revalidatePath("/reviews/write");
   redirect("/reviews/write?submitted=1");

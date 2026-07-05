@@ -90,7 +90,7 @@ export default async function EventDetailPage({
 
       <section className="section--tight" style={{ padding: "40px 0 80px" }}>
         <div className="wrap">
-          <div className="split2" style={{ gridTemplateColumns: "1fr 380px", alignItems: "start", gap: 34 }}>
+          <div className="split2 stack-sm" style={{ gridTemplateColumns: "1fr 380px", alignItems: "start", gap: 34 }}>
             {/* LEFT */}
             <div>
               <div className="imgframe" style={{ marginBottom: 28 }}>

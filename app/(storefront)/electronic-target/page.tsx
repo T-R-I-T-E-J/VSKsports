@@ -217,7 +217,7 @@ export default function ElectronicTargetPage() {
                 <br />
                 in under a second
               </h2>
-              <div className="et-steps" style={{ gridTemplateColumns: "1fr 1fr" }}>
+              <div className="et-steps stack-sm" style={{ gridTemplateColumns: "1fr 1fr" }}>
                 {[
                   ["01", "Fire", "Pellet passes through the sensor frame."],
                   ["02", "Detect", "Acoustic array triangulates the exact position."],
@@ -242,7 +242,7 @@ export default function ElectronicTargetPage() {
       {/* SPECS + QUOTE */}
       <section className="section">
         <div className="wrap">
-          <div className="split2" style={{ gridTemplateColumns: "1fr 380px", alignItems: "start", gap: 40 }}>
+          <div className="split2 stack-sm" style={{ gridTemplateColumns: "1fr 380px", alignItems: "start", gap: 40 }}>
             <div>
               <span className="eyebrow">Technical Specifications</span>
               <h2 className="h-sec" style={{ fontSize: 34, margin: "14px 0 20px" }}>
@@ -286,7 +286,7 @@ export default function ElectronicTargetPage() {
       <section className="section--tight" style={{ padding: "20px 0 80px" }}>
         <div className="wrap">
           <div className="dealer" style={{ background: "linear-gradient(110deg,var(--blue-ink),var(--blue))" }}>
-            <div className="dealer__in" style={{ gridTemplateColumns: "1.4fr .6fr" }}>
+            <div className="dealer__in stack-sm" style={{ gridTemplateColumns: "1.4fr .6fr" }}>
               <div>
                 <span className="eyebrow eyebrow--light">Equip Your Range</span>
                 <h2 style={{ color: "#fff", fontSize: "clamp(28px,3.4vw,42px)", marginTop: 12 }}>

@@ -62,6 +62,9 @@ export function SiteHeader({ cartCount = 0 }: { cartCount?: number }) {
             <Link href="/login" className="transition-colors hover:text-white">
               {t("header.signIn")}
             </Link>
+            <Link href="/register" className="font-semibold text-white transition-colors hover:text-white/80">
+              {t("header.register")}
+            </Link>
             <Link href="/dealers" className="transition-colors hover:text-white">
               {t("header.becomeDealer")}
             </Link>
@@ -168,7 +171,11 @@ export function SiteHeader({ cartCount = 0 }: { cartCount?: number }) {
           <div className="flex flex-col gap-1 text-[15px]">
             <Link href="/login" onClick={() => setOpen(false)} className="inline-flex items-center gap-3 py-2">
               <IconUser width={18} height={18} />
-              Sign In / Register
+              Sign In
+            </Link>
+            <Link href="/register" onClick={() => setOpen(false)} className="inline-flex items-center gap-3 py-2">
+              <IconUser width={18} height={18} />
+              Create Account
             </Link>
             <Link href="/wishlist" onClick={() => setOpen(false)} className="inline-flex items-center gap-3 py-2">
               <IconHeart width={18} height={18} />

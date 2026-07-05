@@ -9,7 +9,11 @@ export default async function DealerApplicationPage({ params }: { params: Promis
   const { id } = await params;
   const app = await prisma.dealerApplication.findUnique({
     where: { id },
-    include: { user: true, reviewedBy: true },
+    include: {
+      user: true,
+      reviewedBy: true,
+      documents: { include: { file: true }, orderBy: { createdAt: "asc" } },
+    },
   });
   if (!app) notFound();
 
@@ -64,6 +68,37 @@ export default async function DealerApplicationPage({ params }: { params: Promis
             <p style={{ fontSize: 14.5, lineHeight: 1.65, color: "var(--ink-2)" }}>
               {app.message ?? "No message provided."}
             </p>
+          </Panel>
+
+          <Panel title="Documents">
+            {app.documents.length === 0 ? (
+              <p style={{ fontSize: 13.5, color: "var(--mute)", margin: 0 }}>
+                No documents were submitted with this application.
+              </p>
+            ) : (
+              <ul style={{ display: "grid", gap: 8, margin: 0, padding: 0, listStyle: "none" }}>
+                {app.documents.map((doc) => {
+                  const filename = doc.label ?? doc.file?.key.split("/").pop() ?? "Document";
+                  return (
+                    <li key={doc.id}>
+                      <a
+                        href={`/api/files/${doc.fileId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn--ghost btn--sm"
+                        style={{ display: "inline-flex", alignItems: "center", gap: 8, maxWidth: "100%" }}
+                      >
+                        <svg viewBox="0 0 24 24" width={16} height={16} fill="none" stroke="currentColor" strokeWidth={2}>
+                          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                          <path d="M14 2v6h6" />
+                        </svg>
+                        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{filename}</span>
+                      </a>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </Panel>
 
           {app.status !== "PENDING" && (

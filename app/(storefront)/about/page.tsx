@@ -148,7 +148,7 @@ export default function AboutPage() {
       <section className="section">
         <div className="wrap">
           <div className="dealer" style={{ background: "linear-gradient(110deg,var(--blue-ink),var(--blue))" }}>
-            <div className="dealer__in" style={{ gridTemplateColumns: "1.4fr .6fr" }}>
+            <div className="dealer__in stack-sm" style={{ gridTemplateColumns: "1.4fr .6fr" }}>
               <div>
                 <h2 style={{ color: "#fff", fontSize: "clamp(28px,3.4vw,42px)" }}>Let&apos;s build the future of shooting in India</h2>
                 <p className="lead" style={{ color: "#C5D2F5", marginTop: 12 }}>

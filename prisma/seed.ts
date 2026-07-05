@@ -86,7 +86,15 @@ async function clear() {
 
 async function main() {
   await clear();
-  const pw = await bcrypt.hash("vsksports", 10);
+  // Seed password: dev convenience default, but NEVER ship the known default to
+  // production. Set SEED_PASSWORD to a strong value before seeding prod.
+  const seedPassword = process.env.SEED_PASSWORD ?? "vsksports";
+  if (process.env.NODE_ENV === "production" && !process.env.SEED_PASSWORD) {
+    throw new Error(
+      "Refusing to seed production with the default password. Set SEED_PASSWORD to a strong value first.",
+    );
+  }
+  const pw = await bcrypt.hash(seedPassword, 10);
 
   // ---- Categories ----
   const catBySlug = new Map<string, string>();

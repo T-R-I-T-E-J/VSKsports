@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { PageHead, Crumb } from "../../../_lib/ui";
 import { PostForm } from "../../PostForm";
+import { BlogCoverManager } from "../../BlogCoverManager";
 import { updatePost } from "../../actions";
 
 export const metadata = { title: "Edit Post — VSK Admin" };
@@ -34,6 +35,7 @@ export default async function EditPostPage({ params }: { params: Promise<{ id: s
         formId="post-form"
         authorName={post.author?.name ?? "VSK Editorial"}
       />
+      <BlogCoverManager postId={post.id} coverImage={post.coverImage} />
     </div>
   );
 }

@@ -25,6 +25,7 @@ export async function createReturn(formData: FormData): Promise<void> {
   const reason = String(formData.get("reason") ?? "").trim();
   const comment = String(formData.get("comment") ?? "").trim();
   const itemIds = formData.getAll("items").map(String);
+  const photoIds = formData.getAll("photoIds").map(String).filter(Boolean);
 
   if (!reason) throw new Error("Reason is required");
   if (itemIds.length === 0) redirect(`/returns?order=${orderId}&error=noitems`);
@@ -57,6 +58,35 @@ export async function createReturn(formData: FormData): Promise<void> {
       },
     },
   });
+
+  // Attach any RETURN_PHOTO files the customer uploaded. Only the current
+  // user's own RETURN_PHOTO files with a published URL are attached — never
+  // trust the client-passed ids alone (could reference others' uploads).
+  if (photoIds.length > 0) {
+    const photoFiles = await prisma.file.findMany({
+      where: {
+        id: { in: photoIds },
+        kind: "RETURN_PHOTO",
+        uploadedById: userId,
+        url: { not: null },
+      },
+      select: { id: true, url: true },
+    });
+    if (photoFiles.length > 0) {
+      // Preserve the upload order the customer chose.
+      const ordered = photoIds
+        .map((id) => photoFiles.find((f) => f.id === id))
+        .filter((f): f is { id: string; url: string } => Boolean(f && f.url));
+      await prisma.returnPhoto.createMany({
+        data: ordered.map((f, position) => ({
+          returnId: created.id,
+          fileId: f.id,
+          url: f.url,
+          position,
+        })),
+      });
+    }
+  }
 
   revalidatePath("/returns");
   redirect(`/returns?submitted=${created.rmaNumber}`);

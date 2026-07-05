@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shop — VSK Sports</title>
+<link rel="stylesheet" href="assets/vsk.css">
+<link rel="stylesheet" href="assets/home.css">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body data-page="shop">
+<div id="site-header"></div>
+
+<!-- PAGE HEAD -->
+<section class="page-head">
+  <svg class="page-head__rings" viewBox="0 0 420 420" fill="none"><circle cx="210" cy="210" r="70" stroke="#1B43C8" stroke-width="1"/><circle cx="210" cy="210" r="130" stroke="#1B43C8" stroke-width="1" stroke-opacity=".5"/><circle cx="210" cy="210" r="195" stroke="#1B43C8" stroke-width="1" stroke-opacity=".28"/></svg>
+  <div class="wrap">
+    <nav class="breadcrumb"><a href="VSK Sports Homepage.html">Home</a><span class="sep">/</span><span class="cur">Shop · Air Rifles</span></nav>
+    <h1 class="ph-title">Air Rifles</h1>
+    <p class="ph-sub">Precision 10m match rifles, sporters and beginner-friendly models from the world's top makers — every unit GST-billed and shipped pan-India.</p>
+  </div>
+</section>
+
+<!-- LISTING -->
+<section class="section--tight" style="padding:34px 0 80px;">
+  <div class="wrap">
+    <div class="toolbar">
+      <div class="toolbar__count"><b id="rescount">9</b> products · Match Equipment</div>
+      <div class="toolbar__right">
+        <a href="Compare.html" class="btn btn--ghost btn--sm" style="padding:9px 14px;"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3v18M15 3v18M3 9h18M3 15h18" opacity="0"/><path d="M3 6h7l-3-3M3 6l3 3M21 18h-7l3 3M21 18l-3-3"/></svg>Compare</a>
+        <div class="selectbox">
+          <select aria-label="Sort">
+            <option>Sort: Featured</option>
+            <option>Price: Low to High</option>
+            <option>Price: High to Low</option>
+            <option>Top Rated</option>
+            <option>New Arrivals</option>
+          </select>
+        </div>
+        <div class="viewtoggle" id="viewtoggle">
+          <button class="active" data-layout="sidebar" aria-label="Sidebar view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="6" height="18" rx="1"/><rect x="11" y="3" width="10" height="8" rx="1"/><rect x="11" y="13" width="10" height="8" rx="1"/></svg></button>
+          <button data-layout="top" aria-label="Grid view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="listing" data-layout="sidebar" id="listing">
+      <!-- SIDEBAR FILTERS -->
+      <aside class="filters">
+        <div class="fgroup">
+          <h4>Category</h4>
+          <label class="fopt"><input type="checkbox" checked>Air Rifles<span class="ct">42</span></label>
+          <label class="fopt"><input type="checkbox">Air Pistols<span class="ct">31</span></label>
+          <label class="fopt"><input type="checkbox">Pellets<span class="ct">58</span></label>
+          <label class="fopt"><input type="checkbox">Targets<span class="ct">24</span></label>
+          <label class="fopt"><input type="checkbox">Accessories<span class="ct">76</span></label>
+        </div>
+        <div class="fgroup">
+          <h4>Brand</h4>
+          <label class="fopt"><input type="checkbox">Walther<span class="ct">12</span></label>
+          <label class="fopt"><input type="checkbox">Feinwerkbau<span class="ct">9</span></label>
+          <label class="fopt"><input type="checkbox">Steyr<span class="ct">7</span></label>
+          <label class="fopt"><input type="checkbox">Diana<span class="ct">6</span></label>
+          <label class="fopt"><input type="checkbox">Gamo<span class="ct">8</span></label>
+          <label class="fopt"><input type="checkbox">VSK<span class="ct">5</span></label>
+        </div>
+        <div class="fgroup">
+          <h4>Price</h4>
+          <div class="priceslider"><span class="knob" style="left:18%"></span><span class="knob" style="left:76%"></span></div>
+          <div class="pricerow"><input value="₹6,500"><span style="color:var(--mute)">—</span><input value="₹2,40,000"></div>
+        </div>
+        <div class="fgroup">
+          <h4>Calibre</h4>
+          <div class="swatchrow" style="gap:8px;">
+            <label class="optpill active">.177</label><label class="optpill">.22</label><label class="optpill">4.5mm</label>
+          </div>
+        </div>
+        <div class="fgroup">
+          <h4>Skill Level</h4>
+          <label class="fopt"><input type="checkbox" checked>Beginner<span class="ct">14</span></label>
+          <label class="fopt"><input type="checkbox">Intermediate<span class="ct">16</span></label>
+          <label class="fopt"><input type="checkbox">Professional<span class="ct">12</span></label>
+        </div>
+        <div class="fgroup" style="border-bottom:none;">
+          <h4>Availability</h4>
+          <label class="fopt"><input type="checkbox" checked>In Stock<span class="ct">38</span></label>
+          <label class="fopt"><input type="checkbox">Pre-order<span class="ct">4</span></label>
+        </div>
+      </aside>
+
+      <!-- MAIN -->
+      <div>
+        <!-- top filter bar (shown only in 'top' layout) -->
+        <div class="filterbar">
+          <span class="fb-chip active">All Rifles</span>
+          <span class="fb-chip">Beginner</span>
+          <span class="fb-chip">Competition</span>
+          <span class="fb-chip">PCP</span>
+          <span class="fb-chip">Spring</span>
+          <span class="fb-chip">.177</span>
+          <span class="fb-chip">.22</span>
+          <span class="fb-chip">Under ₹20,000</span>
+          <span class="fb-chip">VSK Made</span>
+        </div>
+        <div class="pgrid" id="pgrid"></div>
+        <nav class="pagination">
+          <a aria-label="Prev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 18l-6-6 6-6"/></svg></a>
+          <a class="active">1</a><a>2</a><a>3</a><a>4</a><a>5</a>
+          <a aria-label="Next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 6l6 6-6 6"/></svg></a>
+        </nav>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div id="site-footer"></div>
+
+<script src="assets/image-slot.js"></script>
+<script>
+const PRODUCTS = [
+  { b:"Walther", n:"LG500 Anatomic", cal:".177", t:["PCP","10M"], price:"₹2,45,000", r:"5.0", rev:12, tag:"new", img:"assets/products/walther-lg500-anatomic.png" },
+  { b:"Walther", n:"LG400 Anatomic", cal:".177", t:["PCP","10M"], price:"₹1,98,000", r:"4.9", rev:34, img:"assets/products/walther-lg400-anatomic.png" },
+  { b:"Walther", n:"LG400 Monotec", cal:".177", t:["PCP","10M"], price:"₹1,72,000", was:"₹1,85,000", r:"4.8", rev:21, tag:"sale", img:"assets/products/walther-lg400-monotec.png" },
+  { b:"Morini", n:"162EI Titanium Air Pistol", cal:".177", t:["PCP","10M"], price:"₹1,68,000", r:"5.0", rev:9, tag:"new", img:"assets/products/morini-162ei-titanium.png" },
+  { b:"Pardini", n:"K12 Air Pistol", cal:".177", t:["PCP","10M"], price:"₹1,55,000", r:"4.9", rev:17, img:"assets/products/pardini-k12.png" },
+  { b:"Pardini", n:"K10 Air Pistol", cal:".177", t:["PCP","10M"], price:"₹1,42,000", r:"4.8", rev:28, img:"assets/products/pardini-k10.png" },
+  { b:"Steyr", n:"LP10 Air Pistol", cal:".177", t:["PCP","10M"], price:"₹1,48,000", r:"4.9", rev:22, img:"assets/products/steyr-lp10.png" },
+  { b:"RWS", n:"R10 Match Rifle Pellets", cal:".177", t:["7.0gr","500"], price:"₹1,250", was:"₹1,450", r:"4.9", rev:212, tag:"sale", img:"assets/products/rws-r10-match-rifle.png" },
+  { b:"RWS", n:"R10 Match Pistol Pellets", cal:".177", t:["8.2gr","500"], price:"₹1,180", r:"4.8", rev:176, img:"assets/products/rws-r10-match-pistol.png" }
+];
+
+const wishSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.8 5.6a5.5 5.5 0 00-7.8 0L12 6.6l-1-1a5.5 5.5 0 00-7.8 7.8L12 22l7.8-8.6a5.5 5.5 0 001-7.8z"/></svg>`;
+const addSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>`;
+const stars = (r)=>{ const f=Math.round(parseFloat(r)); return '★★★★★'.slice(0,f)+'☆☆☆☆☆'.slice(0,5-f); };
+const chip = (tag)=> tag==='sale'?'<span class="chip chip--sale">Sale</span>': tag==='new'?'<span class="chip chip--new">New</span>': tag==='vsk'?'<span class="chip chip--vsk">VSK</span>':'';
+const slug = (s)=> s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+
+document.getElementById('pgrid').innerHTML = PRODUCTS.map((p,i)=>`
+  <article class="prod">
+    <div class="prod__media">
+      <div class="prod__tags">${chip(p.tag)}</div>
+      <button class="prod__wish" aria-label="wishlist">${wishSvg}</button>
+      <a href="Product.html"><image-slot id="prod-${slug(p.b+' '+p.n)}" src="${p.img}" placeholder="${p.b}" shape="rect"></image-slot></a>
+    </div>
+    <div class="prod__body">
+      <span class="prod__brand">${p.b}</span>
+      <a href="Product.html"><h3 class="prod__name">${p.n}</h3></a>
+      <div class="prod__specs"><span>${p.cal} CAL</span>${p.t.map(x=>`<span>${x}</span>`).join('')}</div>
+      <div class="prod__rate"><span class="stars">${stars(p.r)}</span>${p.r} · ${p.rev} reviews</div>
+      <div class="prod__foot">
+        <div class="prod__price"><b>${p.price}</b>${p.was?`<span class="was">${p.was}</span>`:''}</div>
+        <button class="prod__add" aria-label="add to cart">${addSvg}</button>
+      </div>
+    </div>
+  </article>`).join('');
+var __rc=document.getElementById('rescount'); if(__rc) __rc.textContent=PRODUCTS.length;
+
+// layout toggle
+const listing = document.getElementById('listing');
+document.querySelectorAll('#viewtoggle button').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('#viewtoggle button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    listing.setAttribute('data-layout', btn.dataset.layout);
+  });
+});
+// filterbar chips
+document.querySelectorAll('.fb-chip').forEach(c=>c.addEventListener('click',()=>{ document.querySelectorAll('.fb-chip').forEach(x=>x.classList.remove('active')); c.classList.add('active'); }));
+document.querySelectorAll('.filters .optpill').forEach(c=>c.addEventListener('click',()=>{ c.parentElement.querySelectorAll('.optpill').forEach(x=>x.classList.remove('active')); c.classList.add('active'); }));
+</script>
+<script src="assets/site-chrome.js"></script>
+</body>
+</html>

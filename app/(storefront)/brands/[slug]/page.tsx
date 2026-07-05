@@ -26,7 +26,8 @@ export default async function BrandPage({
     include: {
       _count: { select: { products: true } },
       products: {
-        include: { brand: { select: { name: true } } },
+        where: { isActive: true },
+        include: { brand: { select: { name: true } }, images: { orderBy: { position: "asc" }, take: 1, select: { url: true } } },
         orderBy: { reviewCount: "desc" },
       },
     },

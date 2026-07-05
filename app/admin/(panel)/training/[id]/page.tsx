@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { PageHead, Crumb, Panel, Badge, Av, ago } from "../../_lib/ui";
 import { updateBatch, updateTrainingRegistration } from "../actions";
+import { EventMediaManager } from "../../events/EventMediaManager";
 
 export const metadata = { title: "Training Batch — VSK Admin" };
 
@@ -142,6 +143,8 @@ export default async function TrainingBatchPage({ params }: { params: Promise<{ 
           </form>
         </Panel>
       </div>
+
+      <EventMediaManager kind="training" id={batch.id} imageUrl={batch.imageUrl} />
     </div>
   );
 }

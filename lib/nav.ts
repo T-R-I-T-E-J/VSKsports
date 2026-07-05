@@ -1,5 +1,21 @@
 export type NavLink = { label: string; href: string };
 
+/**
+ * Sanitize a post-auth redirect target (the `?callbackUrl=` param).
+ *
+ * Only same-origin **relative** paths are allowed. Prevents an open redirect
+ * where `?callbackUrl=https://evil.com` (or protocol-relative `//evil.com`, or
+ * backslash tricks `/\evil.com`) would bounce a user to an attacker-controlled
+ * site after they sign in / register. Pure — safe in Server & Client Components.
+ */
+export function safeCallbackUrl(url: unknown): string {
+  if (typeof url !== "string" || url.length === 0) return "/";
+  if (!url.startsWith("/") || url.startsWith("//") || url.startsWith("/\\")) {
+    return "/";
+  }
+  return url;
+}
+
 export const STOREFRONT_NAV: NavLink[] = [
   { label: "Shop", href: "/shop" },
   { label: "Brands", href: "/brands" },
@@ -81,6 +97,7 @@ export const ADMIN_NAV: { group: string; items: AdminNavItem[] }[] = [
       { label: "Blog", href: "/admin/blog", icon: "edit" },
       { label: "Training", href: "/admin/training", icon: "cap" },
       { label: "Events", href: "/admin/events", icon: "trophy" },
+      { label: "Media", href: "/admin/media", icon: "layers" },
     ],
   },
   {

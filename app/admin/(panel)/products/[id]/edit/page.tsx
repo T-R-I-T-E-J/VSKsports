@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { PageHead, Crumb } from "../../../_lib/ui";
 import { ProductForm } from "../../ProductForm";
+import { ProductImageManager } from "../../ProductImageManager";
 import { updateProduct } from "../../actions";
 
 export const metadata = { title: "Edit Product — VSK Admin" };
@@ -10,7 +11,10 @@ export const metadata = { title: "Edit Product — VSK Admin" };
 export default async function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const [product, brands, categories] = await Promise.all([
-    prisma.product.findUnique({ where: { id }, include: { inventory: true } }),
+    prisma.product.findUnique({
+      where: { id },
+      include: { inventory: true, images: { orderBy: { position: "asc" } } },
+    }),
     prisma.brand.findMany({ orderBy: { name: "asc" } }),
     prisma.category.findMany({ orderBy: { name: "asc" } }),
   ]);
@@ -38,6 +42,10 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
         categories={categories}
         action={updateProduct}
         formId="product-form"
+      />
+      <ProductImageManager
+        productId={product.id}
+        images={product.images.map((img) => ({ id: img.id, url: img.url, alt: img.alt }))}
       />
     </div>
   );

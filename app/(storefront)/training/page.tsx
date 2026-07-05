@@ -43,7 +43,7 @@ export default async function TrainingPage() {
               <h2 className="h-sec" style={{ fontSize: 40 }}>Programs for every stage</h2>
             </div>
           </div>
-          <div className="benefits" style={{ gridTemplateColumns: "repeat(4,1fr)" }}>
+          <div className="benefits stack-sm" style={{ gridTemplateColumns: "repeat(4,1fr)" }}>
             {PROGRAMS.map((p) => (
               <div className="benefit" key={p.t}>
                 <div className="benefit__ic">

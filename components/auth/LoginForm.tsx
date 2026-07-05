@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
+import { safeCallbackUrl } from "@/lib/nav";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Eyebrow } from "@/components/ui/Eyebrow";
@@ -32,7 +34,7 @@ export function LoginForm({
       setError("Invalid email or password.");
       return;
     }
-    router.push(callbackUrl);
+    router.push(safeCallbackUrl(callbackUrl));
     router.refresh();
   }
 
@@ -77,8 +79,18 @@ export function LoginForm({
         {loading ? "Signing in…" : "Sign in"}
       </Button>
 
-      <p className="mt-4 font-mono text-[11px] text-mute">
-        Dev seed login — admin@vsksports.in / vsksports
+      <p className="mt-4 text-[14px] text-steel">
+        New to VSK Sports?{" "}
+        <Link
+          href={
+            callbackUrl && callbackUrl !== "/"
+              ? `/register?callbackUrl=${encodeURIComponent(callbackUrl)}`
+              : "/register"
+          }
+          className="font-semibold text-blue hover:underline"
+        >
+          Create an account
+        </Link>
       </p>
     </form>
   );

@@ -44,7 +44,10 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
     prisma.product.findMany({
       where,
       orderBy,
-      include: { brand: { select: { name: true } } },
+      include: {
+        brand: { select: { name: true } },
+        images: { orderBy: { position: "asc" }, take: 1, select: { url: true } },
+      },
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
     }),

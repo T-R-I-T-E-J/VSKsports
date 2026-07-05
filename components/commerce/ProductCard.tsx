@@ -17,6 +17,7 @@ export type CardProduct = {
   rating: number | null;
   reviewCount: number;
   brand: { name: string } | null;
+  images?: { url: string | null }[];
 };
 
 const BADGE: Record<string, "new" | "sale" | "vsk"> = {
@@ -47,9 +48,15 @@ export function ProductCard({
           </div>
         )}
         <WishlistButton productId={product.id} active={wishlisted} className="prod__wish" />
-        <Link href={`/product/${product.slug}`} aria-label={product.name}>
+        <Link
+          href={`/product/${product.slug}`}
+          aria-label={product.name}
+          className="relative block h-[208px] w-full overflow-hidden"
+        >
           <MediaImage
-            className="h-[208px] w-full"
+            fill
+            src={product.images?.[0]?.url ?? undefined}
+            className="h-full w-full"
             alt={product.name}
             placeholder={`${product.brand?.name ?? "VSK"} — ${product.name}`}
           />

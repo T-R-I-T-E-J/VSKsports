@@ -26,7 +26,7 @@ export default async function BlogPage() {
           {featured && (
             <Link
               href={`/blog/${featured.slug}`}
-              className="card"
+              className="card stack-sm"
               style={{ display: "grid", gridTemplateColumns: "1.1fr .9fr", overflow: "hidden", marginBottom: 36, alignItems: "stretch" }}
             >
               <MediaImage className="h-full min-h-[340px] w-full" alt={featured.title} placeholder={featured.category ?? "Featured article"} />

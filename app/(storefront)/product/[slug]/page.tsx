@@ -28,6 +28,7 @@ export default async function ProductPage({
       inventory: true,
       variants: true,
       category: true,
+      images: { orderBy: { position: "asc" } },
       reviews: { where: { status: "APPROVED" }, orderBy: { createdAt: "desc" } },
     },
   });
@@ -41,7 +42,7 @@ export default async function ProductPage({
     },
     take: 4,
     orderBy: { reviewCount: "desc" },
-    include: { brand: { select: { name: true } } },
+    include: { brand: { select: { name: true } }, images: { orderBy: { position: "asc" }, take: 1, select: { url: true } } },
   });
 
   const pdp = {
@@ -59,6 +60,7 @@ export default async function ProductPage({
     reviewCount: product.reviewCount,
     description: product.description,
     stock: product.inventory?.stock ?? 0,
+    images: product.images.map((i) => ({ url: i.url, alt: i.alt })),
     variants: product.variants.map((v) => ({ id: v.id, label: v.label })),
     reviews: product.reviews.map((r) => ({
       id: r.id,

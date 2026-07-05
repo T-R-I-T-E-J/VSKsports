@@ -25,6 +25,10 @@ export function NewsletterForm() {
       <input
         type="email"
         required
+        // A temp-mail / form-filler browser extension injects style + data-*
+        // attributes into email inputs before hydration; suppress the resulting
+        // (harmless) mismatch warning since the cause is outside React.
+        suppressHydrationWarning
         placeholder="Your email address"
         aria-label="Email address"
         className="min-w-0 flex-1 rounded-md border border-white/15 bg-white/5 px-3 py-2.5 text-[14px] text-white outline-none placeholder:text-white/40 focus:border-white/40"

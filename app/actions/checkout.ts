@@ -42,6 +42,13 @@ export async function startCheckout(
   const address = await prisma.address.findFirst({ where: { id: addressId, userId } });
   if (!address) throw new Error("Please choose a valid delivery address");
 
+  // Guard: in production we must NEVER fall through to the mock payment path
+  // (which marks an order PAID with a fake id and collects no money). If the
+  // Razorpay keys are missing in prod, fail loudly instead of shipping free orders.
+  if (!isRazorpayConfigured && process.env.NODE_ENV === "production") {
+    throw new Error("Online payments are temporarily unavailable. Please try again later.");
+  }
+
   const subtotal = cart.items.reduce((s, i) => s + i.product.priceInr * i.quantity, 0);
   const totals = computeTotals(subtotal, shipping);
   const number = await uniqueOrderNumber();

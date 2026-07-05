@@ -19,7 +19,7 @@ export default async function EventsPage() {
       <section className="section--tight" style={{ padding: "34px 0" }}>
         <div className="wrap">
           <div className="dealer" style={{ background: "linear-gradient(110deg,var(--blue-ink),var(--blue))" }}>
-            <div className="dealer__in" style={{ gridTemplateColumns: "1.3fr .7fr" }}>
+            <div className="dealer__in stack-sm" style={{ gridTemplateColumns: "1.3fr .7fr" }}>
               <div>
                 <span className="chip chip--live" style={{ marginBottom: 14 }}>
                   <span className="dot" />

@@ -71,6 +71,7 @@ model User {
   eventRegistrations    EventRegistration[]
   staffActions          StaffAction[]          @relation("StaffActions")
   inventoryAdjustments  InventoryAdjustment[]  @relation("InventoryAdjustments")
+  uploadedFiles         File[]                 @relation("FileUploader")
 }
 
 // Auth.js (NextAuth) adapter models
@@ -184,9 +185,114 @@ model ProductImage {
   id        String  @id @default(cuid())
   productId String
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  fileId    String? @unique
+  file      File?   @relation(fields: [fileId], references: [id])
   url       String
   alt       String?
   position  Int     @default(0)
+}
+
+// ============================================================
+// File / media — central tracking for every upload (temp-then-publish)
+// uploaded ─▶ processing ─┬─▶ attached (url published)
+//                         └─▶ flagged  (never served)
+// stuck > TTL ─▶ orphan ─▶ GC deletes blob + row
+// ============================================================
+enum FileKind {
+  PRODUCT_IMAGE
+  AVATAR
+  BLOG_MEDIA
+  EVENT_MEDIA
+  REVIEW_PHOTO
+  RETURN_PHOTO
+  DEALER_DOC
+  ORDER_DOC
+  OTHER
+}
+
+enum FileVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+enum FileStatus {
+  UPLOADED
+  PROCESSING
+  ATTACHED
+  FLAGGED
+  ORPHAN
+}
+
+model File {
+  id           String         @id @default(cuid())
+  key          String         @unique // storage key/path
+  url          String? // public URL or canonical ref; null until ATTACHED
+  mime         String
+  sizeBytes    Int
+  width        Int?
+  height       Int?
+  kind         FileKind       @default(OTHER)
+  visibility   FileVisibility @default(PUBLIC)
+  status       FileStatus     @default(UPLOADED)
+  sanitized    Boolean        @default(false)
+  scanStatus   String? // null | "pending" | "clean" | "flagged"
+  alt          String?
+  variants     Json? // { "thumb": "...", "md": "..." }
+  uploadedById String?
+  uploadedBy   User?          @relation("FileUploader", fields: [uploadedById], references: [id])
+  productImage   ProductImage?
+  reviewPhoto    ReviewPhoto?
+  returnPhoto    ReturnPhoto?
+  dealerDocument DealerDocument?
+  orderDocument  OrderDocument?
+  eventImage     Event?         @relation("EventImage")
+  trainingImage  TrainingBatch? @relation("TrainingImage")
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@index([kind, createdAt])
+  @@index([status])
+}
+
+model ReviewPhoto {
+  id       String @id @default(cuid())
+  reviewId String
+  review   Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  fileId   String @unique
+  file     File   @relation(fields: [fileId], references: [id])
+  url      String
+  position Int    @default(0)
+}
+
+model ReturnPhoto {
+  id       String @id @default(cuid())
+  returnId String
+  return   Return @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  fileId   String @unique
+  file     File   @relation(fields: [fileId], references: [id])
+  url      String
+  position Int    @default(0)
+}
+
+model DealerDocument {
+  id            String            @id @default(cuid())
+  applicationId String
+  application   DealerApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  fileId        String            @unique
+  file          File              @relation(fields: [fileId], references: [id])
+  label         String?
+  createdAt     DateTime          @default(now())
+}
+
+model OrderDocument {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  fileId    String   @unique
+  file      File     @relation(fields: [fileId], references: [id])
+  label     String?
+  docType   String? // "invoice" | "label" | "other"
+  createdAt DateTime @default(now())
 }
 
 model ProductVariant {
@@ -278,6 +384,7 @@ model Order {
   returns           Return[]
   events            OrderEvent[]
   emails            EmailLog[]
+  documents         OrderDocument[]
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
 }
@@ -331,6 +438,7 @@ model Review {
   orderId      String? // verified-purchase link
   helpfulCount Int          @default(0)
   createdAt    DateTime     @default(now())
+  photos       ReviewPhoto[]
 }
 
 model WishlistItem {
@@ -394,6 +502,7 @@ model Return {
   refundInr   Int?
   resolution  String?
   items       ReturnItem[]
+  photos      ReturnPhoto[]
   processedAt DateTime?
   createdAt   DateTime     @default(now())
 }
@@ -428,6 +537,7 @@ model DealerApplication {
   terms           String? // agreed terms on approval (margin, territory, credit)
   reviewedAt      DateTime?
   createdAt       DateTime        @default(now())
+  documents       DealerDocument[]
 }
 
 // Storefront "find a dealer" directory entry
@@ -458,6 +568,9 @@ model Event {
   prizePoolInr  Int?
   capacity      Int?
   imageNote     String? // image-slot placeholder text
+  imageUrl      String?
+  imageFileId   String?             @unique
+  imageFile     File?               @relation("EventImage", fields: [imageFileId], references: [id])
   registrations EventRegistration[]
   createdAt     DateTime            @default(now())
 }
@@ -480,6 +593,9 @@ model TrainingBatch {
   capacity      Int?
   spotsNote     String?
   imageNote     String?
+  imageUrl      String?
+  imageFileId   String?                @unique
+  imageFile     File?                  @relation("TrainingImage", fields: [imageFileId], references: [id])
   registrations TrainingRegistration[]
   createdAt     DateTime               @default(now())
 }

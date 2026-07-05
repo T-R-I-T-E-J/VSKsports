@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Products — VSK Admin</title>
+<link rel="stylesheet" href="assets/vsk.css">
+<link rel="stylesheet" href="assets/admin.css">
+</head>
+<body class="admin" data-page="products">
+<div class="adm">
+  <aside class="adm-side" id="adm-side"></aside>
+  <div class="adm-main">
+    <header class="adm-top" id="adm-top"></header>
+    <div class="adm-body">
+
+      <div class="adm-page-head">
+        <div class="adm-page-head__t"><h1>Products</h1><div class="sub">142 products across 6 categories</div></div>
+        <div class="adm-page-head__actions">
+          <a href="#" class="btn btn--ghost btn--sm"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Import CSV</a>
+          <a href="Admin-Product-Edit.html" class="btn btn--primary btn--sm"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Add Product</a>
+        </div>
+      </div>
+
+      <div class="panel-c">
+        <div class="panel-c__body">
+          <div class="tbl-tools">
+            <div class="tbl-tools__left">
+              <div class="seg"><button class="active">All <span style="opacity:.6">142</span></button><button>Active 128</button><button>Draft 9</button><button>Out of stock 5</button></div>
+            </div>
+            <div class="tbl-tools__left">
+              <div class="adm-search-sm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input placeholder="Search products"></div>
+              <div class="selectbox"><select><option>All Categories</option><option>Air Rifles</option><option>Air Pistols</option><option>Pellets</option><option>Targets</option><option>Accessories</option></select></div>
+            </div>
+          </div>
+
+          <div style="overflow-x:auto;">
+            <table class="dtbl">
+              <thead><tr><th style="width:34px;"><input type="checkbox"></th><th>Product</th><th>Category</th><th>Brand</th><th class="num">Price</th><th class="num">Stock</th><th>Status</th><th style="text-align:right;">Actions</th></tr></thead>
+              <tbody id="rows"></tbody>
+            </table>
+          </div>
+
+          <div class="adm-pag">
+            <div class="adm-pag__info">Showing 1–8 of 142 products</div>
+            <div class="adm-pag__btns"><a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 18l-6-6 6-6"/></svg></a><a class="active">1</a><a>2</a><a>3</a><a>…</a><a>18</a><a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 6l6 6-6 6"/></svg></a></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="assets/image-slot.js"></script>
+<script>
+const P=[
+  ["LG500 Anatomic","WAL","Air Rifles","Walther","₹2,45,000",8,"b-green","Active","assets/products/walther-lg500-anatomic.png"],
+  ["LG400 Anatomic","WAL","Air Rifles","Walther","₹1,98,000",14,"b-green","Active","assets/products/walther-lg400-anatomic.png"],
+  ["LG400 Monotec","WAL","Air Rifles","Walther","₹1,72,000",6,"b-green","Active","assets/products/walther-lg400-monotec.png"],
+  ["162EI Titanium Air Pistol","MOR","Air Pistols","Morini","₹1,68,000",3,"b-amber","Low Stock","assets/products/morini-162ei-titanium.png"],
+  ["K12 Air Pistol","PAR","Air Pistols","Pardini","₹1,55,000",5,"b-green","Active","assets/products/pardini-k12.png"],
+  ["K10 Air Pistol","PAR","Air Pistols","Pardini","₹1,42,000",9,"b-green","Active","assets/products/pardini-k10.png"],
+  ["LP10 Air Pistol","STE","Air Pistols","Steyr","₹1,48,000",0,"b-red","Out of Stock","assets/products/steyr-lp10.png"],
+  ["R10 Match Rifle Pellets","RWS","Pellets","RWS","₹1,250",1240,"b-green","Active","assets/products/rws-r10-match-rifle.png"],
+  ["R10 Match Pistol Pellets","RWS","Pellets","RWS","₹1,180",980,"b-green","Active","assets/products/rws-r10-match-pistol.png"]
+];
+const ico={edit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
+  view:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>',
+  del:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>'};
+const slug=(s)=>s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+document.getElementById('rows').innerHTML=P.map(([n,av,cat,br,price,stock,cls,st,img])=>`
+  <tr>
+    <td><input type="checkbox"></td>
+    <td><span class="cell-prod"><image-slot id="prod-${slug(br+' '+n)}" src="${img}" placeholder="${av}" shape="rect"></image-slot><span><b>${n}</b><span>SKU-${av}${Math.floor(Math.random()*900+100)}</span></span></span></td>
+    <td>${cat}</td>
+    <td class="muted" style="font-family:var(--mono);color:var(--ink-2);">${br}</td>
+    <td class="num" style="font-weight:700;">${price}</td>
+    <td class="num">${stock}</td>
+    <td><span class="badge ${cls}"><i></i>${st}</span></td>
+    <td><div class="row-act"><a href="Admin-Product-Edit.html" title="Edit">${ico.edit}</a><a href="Product.html" target="_blank" title="View">${ico.view}</a><button class="del" title="Delete">${ico.del}</button></div></td>
+  </tr>`).join('');
+</script>
+<script src="assets/admin-chrome.js"></script>
+</body>
+</html>

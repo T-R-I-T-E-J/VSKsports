@@ -4,6 +4,7 @@
 // SMTP/provider transport can be plugged in later behind the same interface
 // without touching callers.
 
+import nodemailer, { type Transporter } from "nodemailer";
 import { prisma } from "@/lib/db";
 import type { EmailType } from "@prisma/client";
 import {
@@ -54,26 +55,38 @@ const consoleTransport: EmailTransport = {
 };
 
 /**
- * SMTP/provider hook — STUB. Selected when SMTP_HOST is configured.
- * Wave 2+: replace the body with a real transport, e.g.
- *
- *   import nodemailer from "nodemailer";
- *   const t = nodemailer.createTransport({
- *     host: process.env.SMTP_HOST,
- *     port: Number(process.env.SMTP_PORT ?? 587),
- *     auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
- *   });
- *   await t.sendMail({ from: process.env.SMTP_FROM, to: input.to,
- *                      subject: input.subject, html: input.html });
- *
- * (nodemailer deliberately NOT installed this wave — no new dependencies.)
+ * Real SMTP transport (nodemailer). Selected when SMTP_HOST is configured.
+ * The transporter is created lazily and cached for reuse. `sendEmail()` wraps
+ * every send in try/catch, so a delivery failure is logged as EmailLog=FAILED
+ * and never throws into checkout/webhook flows.
  */
+let cachedTransporter: Transporter | null = null;
+function getTransporter(): Transporter {
+  if (!cachedTransporter) {
+    const port = Number(process.env.SMTP_PORT ?? 587);
+    cachedTransporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port,
+      secure: port === 465, // implicit TLS on 465; STARTTLS on 587/25
+      auth: process.env.SMTP_USER
+        ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
+        : undefined,
+    });
+  }
+  return cachedTransporter;
+}
+
 const smtpTransport: EmailTransport = {
-  name: "smtp-stub",
+  name: "smtp",
   async deliver(input) {
-    console.log(
-      `📧 [SMTP STUB] would send via ${process.env.SMTP_HOST} → to=${input.to} type=${input.type} subject="${input.subject}"`,
-    );
+    const from = process.env.SMTP_FROM || process.env.SMTP_USER;
+    if (!from) throw new Error("SMTP_FROM (or SMTP_USER) is required to send email");
+    await getTransporter().sendMail({
+      from,
+      to: input.to,
+      subject: input.subject,
+      html: input.html,
+    });
   },
 };
 

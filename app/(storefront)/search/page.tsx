@@ -26,7 +26,7 @@ export default async function SearchPage({
             { tags: { has: query } },
           ],
         },
-        include: { brand: { select: { name: true } } },
+        include: { brand: { select: { name: true } }, images: { orderBy: { position: "asc" }, take: 1, select: { url: true } } },
         take: 24,
       })
     : [];

@@ -7,6 +7,7 @@ import { MediaImage } from "@/components/motifs/MediaImage";
 import { submitReview } from "@/app/actions/reviews";
 import { fmtDate, shortName } from "../../account/_shared";
 import { MiniStars, StarPicker } from "./StarPicker";
+import { ReviewPhotoUploader } from "./ReviewPhotoUploader";
 
 export const metadata = { title: "Write a Review" };
 
@@ -159,12 +160,7 @@ export default async function WriteReviewPage({
                 </div>
                 <div className="field" style={{ marginBottom: 18 }}>
                   <label>Add photos (optional)</label>
-                  <div className="dropz-row">
-                    <MediaImage alt="Add photo" placeholder="+" className="h-[74px] w-full rounded border border-(--line)" />
-                    <MediaImage alt="Add photo" placeholder="+" className="h-[74px] w-full rounded border border-(--line)" />
-                    <MediaImage alt="Add photo" placeholder="+" className="h-[74px] w-full rounded border border-(--line)" />
-                    <MediaImage alt="Add photo" placeholder="+" className="h-[74px] w-full rounded border border-(--line)" />
-                  </div>
+                  <ReviewPhotoUploader />
                 </div>
                 <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: "var(--ink-2)", marginBottom: 20 }}>
                   <input type="checkbox" defaultChecked className="rsel" style={{ width: 18, height: 18 }} />

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { PageHead, Crumb, Panel, Badge, Av, ago } from "../../_lib/ui";
 import { updateEvent, updateEventRegistration } from "../actions";
+import { EventMediaManager } from "../EventMediaManager";
 
 export const metadata = { title: "Event — VSK Admin" };
 
@@ -137,6 +138,8 @@ export default async function AdminEventDetail({ params }: { params: Promise<{ i
           </form>
         </Panel>
       </div>
+
+      <EventMediaManager kind="event" id={event.id} imageUrl={event.imageUrl} />
     </div>
   );
 }

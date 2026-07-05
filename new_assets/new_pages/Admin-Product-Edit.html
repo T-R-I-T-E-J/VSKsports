@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Edit Product — VSK Admin</title>
+<link rel="stylesheet" href="assets/vsk.css">
+<link rel="stylesheet" href="assets/admin.css">
+</head>
+<body class="admin" data-page="products">
+<div class="adm">
+  <aside class="adm-side" id="adm-side"></aside>
+  <div class="adm-main">
+    <header class="adm-top" id="adm-top"></header>
+    <div class="adm-body">
+
+      <div class="adm-crumb"><a href="Admin-Products.html">Products</a><span>/</span>Edit Product</div>
+      <div class="adm-page-head">
+        <div class="adm-page-head__t"><h1>Edit Product</h1><div class="sub">Walther LG400 Monotec · SKU-WAL402</div></div>
+        <div class="adm-page-head__actions">
+          <a href="Admin-Products.html" class="btn btn--ghost btn--sm">Cancel</a>
+          <button class="btn btn--ghost btn--sm">Save Draft</button>
+          <button class="btn btn--primary btn--sm" id="save"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>Publish</button>
+        </div>
+      </div>
+
+      <div class="adm-grid adm-grid--2">
+        <!-- LEFT -->
+        <div style="display:grid;gap:16px;">
+          <div class="panel-c"><div class="panel-c__head"><h3>General</h3></div><div class="panel-c__body">
+            <div class="afield"><label>Product name <span class="req">*</span></label><input value="LG400 Monotec Air Rifle"></div>
+            <div class="afield"><label>Short description</label><textarea>The benchmark 10m match rifle. Absolutely-barrel-free system and Alutec aluminium stock deliver world-class consistency.</textarea></div>
+            <div class="afield"><label>Full description</label><textarea style="min-height:150px;">The LG400 is the most successful match rifle in the world. Its ABF (absolutely-barrel-free) system isolates the barrel from stock forces for shot-after-shot repeatability…</textarea></div>
+          </div></div>
+
+          <div class="panel-c"><div class="panel-c__head"><h3>Media</h3><span class="sub">First image is the cover</span></div><div class="panel-c__body">
+            <div class="dropz"><image-slot id="prod-walther-lg400-monotec" src="assets/products/walther-lg400-monotec.png" placeholder="Drop main product image (PNG/JPG)"></image-slot>
+              <div class="dropz-row"><image-slot id="prod-walther-lg400-monotec-1" src="assets/products/walther-lg400-monotec.png" placeholder="+"></image-slot><image-slot id="prod-walther-lg400-monotec-2" src="assets/products/walther-lg500-anatomic.png" placeholder="+"></image-slot><image-slot id="prod-walther-lg400-monotec-3" src="assets/products/walther-lg400-anatomic.png" placeholder="+"></image-slot><image-slot id="prod-walther-lg400-monotec-4" src="assets/products/walther-lg500-anatomic-2.png" placeholder="+"></image-slot></div>
+            </div>
+          </div></div>
+
+          <div class="panel-c"><div class="panel-c__head"><h3>Specifications</h3></div><div class="panel-c__body">
+            <div class="aform-grid">
+              <div class="afield"><label>Discipline</label><input value="10m Air Rifle (ISSF)"></div>
+              <div class="afield"><label>Calibre</label><select><option>.177 / 4.5mm</option><option>.22 / 5.5mm</option></select></div>
+              <div class="afield"><label>Power source</label><select><option>PCP</option><option>Spring-piston</option><option>Gas-piston</option><option>CO₂</option></select></div>
+              <div class="afield"><label>Trigger</label><input value="Match, from 60g"></div>
+              <div class="afield"><label>Weight</label><input value="4.4 kg"></div>
+              <div class="afield"><label>Shots / fill</label><input value="~400"></div>
+            </div>
+          </div></div>
+        </div>
+
+        <!-- RIGHT -->
+        <div style="display:grid;gap:16px;">
+          <div class="panel-c"><div class="panel-c__head"><h3>Status</h3></div><div class="panel-c__body">
+            <div class="afield"><label>Visibility</label>
+              <div class="statuspick">
+                <label><input type="radio" name="vis" checked><span class="sp">Published</span></label>
+                <label><input type="radio" name="vis"><span class="sp">Draft</span></label>
+                <label><input type="radio" name="vis"><span class="sp">Hidden</span></label>
+              </div>
+            </div>
+            <hr class="hr-soft">
+            <label class="switch" style="margin-bottom:14px;"><input type="checkbox" checked><span class="track"></span><span class="sl">Featured product</span></label><br>
+            <label class="switch" style="margin-bottom:14px;"><input type="checkbox"><span class="track"></span><span class="sl">Restricted — quote only</span></label><br>
+            <label class="switch"><input type="checkbox" checked><span class="track"></span><span class="sl">Eligible for free shipping</span></label>
+          </div></div>
+
+          <div class="panel-c"><div class="panel-c__head"><h3>Pricing</h3></div><div class="panel-c__body">
+            <div class="afield"><label>Price (₹) <span class="req">*</span></label><div class="input-prefix"><span>₹</span><input value="1,84,500"></div></div>
+            <div class="afield"><label>Compare-at price (₹)</label><div class="input-prefix"><span>₹</span><input value="1,99,000"></div><span class="hint">Shows as a struck-through "was" price</span></div>
+            <div class="afield"><label>GST rate</label><select><option>18% (default)</option><option>12%</option><option>28%</option><option>Exempt</option></select></div>
+          </div></div>
+
+          <div class="panel-c"><div class="panel-c__head"><h3>Organization</h3></div><div class="panel-c__body">
+            <div class="afield"><label>Category</label><select><option>Air Rifles</option><option>Air Pistols</option><option>Pellets</option><option>Targets</option><option>Accessories</option></select></div>
+            <div class="afield"><label>Brand</label><select><option>Walther</option><option>Feinwerkbau</option><option>Steyr</option><option>VSK Pro</option></select></div>
+            <div class="afield"><label>Skill level</label><select><option>Professional</option><option>Intermediate</option><option>Beginner</option></select></div>
+            <div class="afield"><label>Tags</label>
+              <div class="tag-input"><span class="t">competition <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg></span><span class="t">10m <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg></span><span class="t">pcp <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg></span><input placeholder="Add tag…"></div>
+            </div>
+          </div></div>
+
+          <div class="panel-c"><div class="panel-c__head"><h3>Inventory</h3></div><div class="panel-c__body">
+            <div class="aform-grid">
+              <div class="afield"><label>SKU</label><input value="SKU-WAL204"></div>
+              <div class="afield"><label>Stock qty</label><input value="24"></div>
+            </div>
+            <label class="switch"><input type="checkbox" checked><span class="track"></span><span class="sl">Track inventory</span></label>
+          </div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/image-slot.js"></script>
+<script>
+document.getElementById('save').addEventListener('click',function(){ const o=this.innerHTML; this.innerHTML='✓ Published'; this.style.background='#1FA855'; setTimeout(()=>{this.innerHTML=o;this.style.background='';},1400); });
+document.querySelectorAll('.statuspick label').forEach(l=>l.addEventListener('click',()=>{}));
+</script>
+<script src="assets/admin-chrome.js"></script>
+</body>
+</html>

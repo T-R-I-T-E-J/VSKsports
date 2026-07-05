@@ -58,7 +58,10 @@ export default async function HomePage() {
       where: { isActive: true },
       take: 4,
       orderBy: { reviewCount: "desc" },
-      include: { brand: { select: { name: true } } },
+      include: {
+        brand: { select: { name: true } },
+        images: { orderBy: { position: "asc" }, take: 1, select: { url: true } },
+      },
     }),
     prisma.brand.findMany({ orderBy: { name: "asc" }, take: 7 }),
     prisma.trainingBatch.findMany({ take: 3, orderBy: { createdAt: "asc" } }),

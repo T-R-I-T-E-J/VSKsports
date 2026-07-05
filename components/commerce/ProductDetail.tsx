@@ -22,6 +22,7 @@ export type PdpProduct = {
   reviewCount: number;
   description: string | null;
   stock: number;
+  images: { url: string; alt: string | null }[];
   variants: { id: string; label: string }[];
   reviews: { id: string; authorName: string; rating: number; title: string | null; body: string }[];
 };
@@ -80,26 +81,30 @@ export function ProductDetail({ p }: { p: PdpProduct }) {
                 )}
                 <MediaImage
                   className="h-[480px] w-full max-[900px]:h-[380px]"
-                  alt={`${p.name} — view ${thumb + 1}`}
+                  src={p.images[thumb]?.url}
+                  alt={p.images[thumb]?.alt ?? `${p.name} — view ${thumb + 1}`}
                   placeholder={`${p.name} — view ${thumb + 1}`}
                 />
               </div>
-              <div className="pdp__thumbs">
-                {[0, 1, 2, 3].map((i) => (
-                  <button
-                    key={i}
-                    onClick={() => setThumb(i)}
-                    aria-label={`View ${i + 1}`}
-                    style={{ padding: 0, border: "none", background: "none", cursor: "pointer" }}
-                  >
-                    <MediaImage
-                      className={`h-[92px] w-full rounded-[8px] border-2 ${i === thumb ? "border-blue" : "border-line"}`}
-                      alt={`View ${i + 1}`}
-                      placeholder={`View ${i + 1}`}
-                    />
-                  </button>
-                ))}
-              </div>
+              {p.images.length > 1 && (
+                <div className="pdp__thumbs">
+                  {p.images.map((img, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setThumb(i)}
+                      aria-label={`View ${i + 1}`}
+                      style={{ padding: 0, border: "none", background: "none", cursor: "pointer" }}
+                    >
+                      <MediaImage
+                        className={`h-[92px] w-full rounded-[8px] border-2 ${i === thumb ? "border-blue" : "border-line"}`}
+                        src={img.url}
+                        alt={img.alt ?? `View ${i + 1}`}
+                        placeholder={`View ${i + 1}`}
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* INFO */}

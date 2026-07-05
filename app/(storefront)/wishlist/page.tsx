@@ -12,7 +12,7 @@ export default async function WishlistPage() {
   const items = session?.user?.id
     ? await prisma.wishlistItem.findMany({
         where: { userId: session.user.id },
-        include: { product: { include: { brand: { select: { name: true } } } } },
+        include: { product: { include: { brand: { select: { name: true } }, images: { orderBy: { position: "asc" }, take: 1, select: { url: true } } } } },
         orderBy: { createdAt: "desc" },
       })
     : [];

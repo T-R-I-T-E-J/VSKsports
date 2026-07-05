@@ -1,27 +1,27 @@
 import Link from "next/link";
 import { PageHeader } from "@/components/storefront/PageHeader";
 import { MediaImage } from "@/components/motifs/MediaImage";
+import { prisma } from "@/lib/db";
+import { formatINR } from "@/lib/format";
 
 export const metadata = { title: "Compare" };
 
-const COLS = [
-  { brand: "Walther", name: "LG400 Alutec", price: "₹1,84,500" },
-  { brand: "Feinwerkbau", name: "800 X Match", price: "₹2,28,000" },
-  { brand: "Steyr", name: "LG110 HP", price: "₹2,12,000" },
+// Three real products to compare (the Walther match-rifle line). Header data
+// (image, brand, name, price) is pulled live from the DB; the spec ROWS below
+// are illustrative — the Product model doesn't store per-unit specs yet.
+const COMPARE_SLUGS = [
+  "walther-lg500-anatomic",
+  "walther-lg400-anatomic",
+  "walther-lg400-monotec",
 ];
 
 const ROWS: [string, string, string, string][] = [
-  ["Rating", "4.9 ★ (36)", "5.0 ★ (18)", "4.9 ★ (24)"],
   ["Calibre", ".177 / 4.5mm", ".177 / 4.5mm", ".177 / 4.5mm"],
   ["Power System", "PCP · 200 bar", "PCP · 200 bar", "PCP · 200 bar"],
   ["Discipline", "10m Air Rifle", "10m Air Rifle", "10m Air Rifle"],
-  ["Trigger", "Match, from 60g", "Match, from 50g", "Match, from 60g"],
-  ["Stock", "Alutec aluminium", "Aluminium", "Walnut / Aluminium"],
-  ["Weight", "4.4 kg", "4.3 kg", "4.5 kg"],
-  ["Shots / Fill", "~400", "~450", "~420"],
+  ["Trigger", "Match, adjustable", "Match, adjustable", "Match, adjustable"],
+  ["Stock", "Anatomic", "Anatomic", "Carbon Monotec"],
   ["Skill Level", "Professional", "Professional", "Professional"],
-  ["ABF Barrel System", "yes", "yes", "no"],
-  ["Junior Variant", "yes", "yes", "no"],
   ["Warranty", "2 years", "2 years", "2 years"],
   ["In Stock", "yes", "yes", "yes"],
 ];
@@ -29,7 +29,20 @@ const ROWS: [string, string, string, string][] = [
 const cell = (v: string) =>
   v === "yes" ? <span className="yes">✓ Yes</span> : v === "no" ? <span className="no">— No</span> : v;
 
-export default function ComparePage() {
+export default async function ComparePage() {
+  const rows = await prisma.product.findMany({
+    where: { slug: { in: COMPARE_SLUGS } },
+    select: {
+      slug: true,
+      name: true,
+      priceInr: true,
+      brand: { select: { name: true } },
+      images: { orderBy: { position: "asc" }, take: 1, select: { url: true } },
+    },
+  });
+  const bySlug = new Map(rows.map((p) => [p.slug, p]));
+  const cols = COMPARE_SLUGS.map((s) => bySlug.get(s)).filter((p): p is NonNullable<typeof p> => !!p);
+
   return (
     <>
       <PageHeader
@@ -45,13 +58,18 @@ export default function ComparePage() {
               <thead>
                 <tr>
                   <th className="feat" style={{ background: "#fff", borderBottom: "none" }} />
-                  {COLS.map((c) => (
-                    <th className="pcol" key={c.name}>
-                      <MediaImage className="mb-3 h-[150px] w-full rounded-[8px] border border-line" alt={c.name} placeholder={c.brand} />
-                      <span className="pbrand">{c.brand}</span>
+                  {cols.map((c) => (
+                    <th className="pcol" key={c.slug}>
+                      <MediaImage
+                        className="mb-3 h-[150px] w-full rounded-[8px] border border-line"
+                        src={c.images?.[0]?.url}
+                        alt={c.name}
+                        placeholder={c.brand?.name ?? "VSK"}
+                      />
+                      <span className="pbrand">{c.brand?.name ?? "VSK"}</span>
                       <div className="pname">{c.name}</div>
-                      <div className="pprice">{c.price}</div>
-                      <Link href="/shop" className="btn btn--primary btn--sm" style={{ marginTop: 10, width: "100%", justifyContent: "center" }}>View</Link>
+                      <div className="pprice">{formatINR(c.priceInr)}</div>
+                      <Link href={`/product/${c.slug}`} className="btn btn--primary btn--sm" style={{ marginTop: 10, width: "100%", justifyContent: "center" }}>View</Link>
                       <div className="rm" style={{ marginTop: 8, textAlign: "center" }}>✕ Remove</div>
                     </th>
                   ))}

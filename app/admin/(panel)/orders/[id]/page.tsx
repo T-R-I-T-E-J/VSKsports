@@ -17,6 +17,7 @@ import {
   inrCompact,
 } from "../../_lib/ui";
 import { updateOrderStatus, updateOrderNotes } from "../actions";
+import { OrderDocManager } from "../OrderDocManager";
 
 export const metadata = { title: "Order Detail — VSK Admin" };
 
@@ -42,6 +43,7 @@ export default async function AdminOrderDetail({ params }: { params: Promise<{ i
         },
       },
       events: { orderBy: { createdAt: "desc" } },
+      documents: { include: { file: true }, orderBy: { createdAt: "asc" } },
     },
   });
   if (!order) notFound();
@@ -144,6 +146,19 @@ export default async function AdminOrderDetail({ params }: { params: Promise<{ i
               </div>
               <button className="btn btn--ghost btn--sm">Save Notes</button>
             </form>
+          </Panel>
+
+          <Panel title="Documents" sub="Invoices & shipping labels">
+            <OrderDocManager
+              orderId={order.id}
+              documents={order.documents.map((d) => ({
+                id: d.id,
+                fileId: d.fileId,
+                label: d.label,
+                docType: d.docType,
+                file: d.file ? { mime: d.file.mime } : null,
+              }))}
+            />
           </Panel>
         </div>
 

@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { formatINR } from "@/lib/format";
 import { MediaImage } from "@/components/motifs/MediaImage";
 import { createReturn } from "@/app/actions/returns";
+import { ReturnPhotoUploader } from "./ReturnPhotoUploader";
 import { fmtDate } from "../account/_shared";
 import type { ReturnStatus } from "@prisma/client";
 
@@ -178,8 +179,8 @@ export default async function ReturnsPage({
                         <label>Tell us more (optional)</label>
                         <textarea name="comment" placeholder="Add any detail that helps us process faster…" />
                       </div>
-                      <div className="dropz" style={{ marginTop: 14 }}>
-                        <MediaImage alt="Upload a photo of the issue (optional)" placeholder="Upload a photo of the issue (optional)" className="h-[200px] w-full rounded-lg" />
+                      <div style={{ marginTop: 14 }}>
+                        <ReturnPhotoUploader />
                       </div>
                     </div>
                   </div>

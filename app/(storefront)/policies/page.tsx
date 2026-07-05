@@ -362,7 +362,7 @@ export default function PoliciesPage() {
         <div className="wrap">
           <div
             style={{ display: "grid", gridTemplateColumns: "240px 1fr", gap: 36, alignItems: "start" }}
-            className="max-[820px]:!grid-cols-1"
+            className="stack-sm"
           >
             <PoliciesNav items={POLICIES.map((p) => ({ id: p.id, label: p.label }))} />
 

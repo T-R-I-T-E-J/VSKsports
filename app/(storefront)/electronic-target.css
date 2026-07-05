@@ -30,3 +30,4 @@
 .et-step p { color: var(--steel); font-size: 14px; }
 @media (max-width: 900px) { .et-hero .wrap { grid-template-columns: 1fr; gap: 36px; } .et-feat { grid-template-columns: 1fr; } }
 @media (max-width: 880px) { .et-steps { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { .et-steps { grid-template-columns: 1fr; } }

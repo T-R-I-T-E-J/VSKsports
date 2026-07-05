@@ -4,7 +4,8 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { changePassword, updateCommunicationPrefs, updateProfile } from "@/app/actions/account";
-import { fmtMonthYear, initials, tierProgress } from "../account/_shared";
+import { fmtMonthYear, tierProgress } from "../account/_shared";
+import { AvatarUploader } from "./AvatarUploader";
 
 export const metadata = { title: "Profile Settings" };
 
@@ -74,10 +75,8 @@ export default async function ProfileSettingsPage({
             <div>
               {section === "profile" && (
                 <div className="card card--pad">
+                  <AvatarUploader currentImage={user.image} name={user.name} />
                   <div style={{ display: "flex", alignItems: "center", gap: 18, marginBottom: 24, paddingBottom: 24, borderBottom: "1px solid var(--line)" }}>
-                    <span style={{ width: 64, height: 64, borderRadius: "50%", background: "var(--blue)", color: "#fff", display: "grid", placeItems: "center", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 24 }}>
-                      {initials(user.name)}
-                    </span>
                     <div>
                       <b style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 20, textTransform: "uppercase", display: "block" }}>
                         {user.name ?? "VSK Member"}

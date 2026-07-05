@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Search — VSK Sports</title>
+<link rel="stylesheet" href="assets/vsk.css">
+<link rel="stylesheet" href="assets/home.css">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body data-page="shop">
+<div id="site-header"></div>
+
+<section class="page-head">
+  <svg class="page-head__rings" viewBox="0 0 420 420" fill="none"><circle cx="210" cy="210" r="70" stroke="#1B43C8" stroke-width="1"/><circle cx="210" cy="210" r="130" stroke="#1B43C8" stroke-width="1" stroke-opacity=".5"/><circle cx="210" cy="210" r="195" stroke="#1B43C8" stroke-width="1" stroke-opacity=".28"/></svg>
+  <div class="wrap">
+    <nav class="breadcrumb"><a href="VSK Sports Homepage.html">Home</a><span class="sep">/</span><span class="cur">Search</span></nav>
+    <h1 class="ph-title" style="margin-bottom:20px;">Search</h1>
+    <div class="searchbar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input id="q" value="walther" placeholder="Search rifles, pellets, targets, brands…">
+      <button class="btn btn--primary btn--sm" style="flex-shrink:0;">Search</button>
+    </div>
+    <div class="search-sugg"><span>Try:</span><a href="#">air rifle</a><a href="#">.177 pellets</a><a href="#">beginner kit</a><a href="#">electronic target</a><a href="#">shooting glove</a></div>
+  </div>
+</section>
+
+<section class="section--tight" style="padding:30px 0 80px;">
+  <div class="wrap">
+    <div class="toolbar">
+      <div class="toolbar__count">Showing <b id="cnt">6</b> results for "<b>walther</b>"</div>
+      <div class="toolbar__right"><div class="selectbox"><select><option>Most Relevant</option><option>Price: Low to High</option><option>Top Rated</option></select></div></div>
+    </div>
+    <div class="prods" id="results"></div>
+  </div>
+</section>
+
+<div id="site-footer"></div>
+
+<script src="assets/image-slot.js"></script>
+<script>
+const R=[
+  ["Walther","LG500 Anatomic",".177",["PCP","10M"],"₹2,45,000","",5,12,"new","assets/products/walther-lg500-anatomic.png"],
+  ["Walther","LG400 Anatomic",".177",["PCP","10M"],"₹1,98,000","",5,34,"","assets/products/walther-lg400-anatomic.png"],
+  ["Walther","LG400 Monotec",".177",["PCP","10M"],"₹1,72,000","₹1,85,000",5,21,"sale","assets/products/walther-lg400-monotec.png"],
+  ["Morini","162EI Titanium Air Pistol",".177",["PCP","10M"],"₹1,68,000","",5,9,"new","assets/products/morini-162ei-titanium.png"],
+  ["Pardini","K12 Air Pistol",".177",["PCP","10M"],"₹1,55,000","",5,17,"","assets/products/pardini-k12.png"],
+  ["Steyr","LP10 Air Pistol",".177",["PCP","10M"],"₹1,48,000","",5,22,"","assets/products/steyr-lp10.png"]
+];
+const stars=(f)=>'★★★★★'.slice(0,f)+'☆☆☆☆☆'.slice(0,5-f);
+const chip=(t)=>t==='sale'?'<span class="chip chip--sale">Sale</span>':t==='new'?'<span class="chip chip--new">New</span>':'';
+const slug=(s)=>s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+document.getElementById('results').innerHTML=R.map(([br,n,cal,t,price,was,r,rev,tag,img],i)=>`
+  <article class="prod"><div class="prod__media"><div class="prod__tags">${chip(tag)}</div>
+  <button class="prod__wish" aria-label="wishlist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.8 5.6a5.5 5.5 0 00-7.8 0L12 6.6l-1-1a5.5 5.5 0 00-7.8 7.8L12 22l7.8-8.6a5.5 5.5 0 001-7.8z"/></svg></button>
+  <a href="Product.html"><image-slot id="prod-${slug(br+' '+n)}" src="${img}" placeholder="${br}" shape="rect"></image-slot></a></div>
+  <div class="prod__body"><span class="prod__brand">${br}</span><a href="Product.html"><h3 class="prod__name">${n}</h3></a>
+  <div class="prod__specs"><span>${cal} CAL</span>${t.map(x=>`<span>${x}</span>`).join('')}</div>
+  <div class="prod__rate"><span class="stars">${stars(r)}</span>${r}.0 · ${rev}</div>
+  <div class="prod__foot"><div class="prod__price"><b>${price}</b>${was?`<span class="was">${was}</span>`:''}</div>
+  <button class="prod__add" aria-label="add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button></div></div></article>`).join('');
+</script>
+<script src="assets/site-chrome.js"></script>
+</body>
+</html>

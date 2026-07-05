@@ -25,6 +25,7 @@ export default async function OrderDetailPage({
       items: { include: { product: { select: { slug: true, brand: { select: { name: true } } } } } },
       address: true,
       events: { orderBy: { createdAt: "asc" } },
+      documents: { orderBy: { createdAt: "asc" } },
     },
   });
   if (!order) notFound();
@@ -164,6 +165,28 @@ export default async function OrderDetailPage({
                 <a href="#" className="btn btn--ghost btn--sm" style={{ width: "100%", justifyContent: "center", marginTop: 16 }}>
                   Download GST Invoice
                 </a>
+              )}
+              {order.documents.length > 0 && (
+                <>
+                  <hr style={{ border: "none", borderTop: "1px solid var(--line)", margin: "18px 0" }} />
+                  <b style={{ fontFamily: "var(--font-display)", fontWeight: 700, textTransform: "uppercase", fontSize: 14, display: "block", marginBottom: 8 }}>
+                    Documents
+                  </b>
+                  <ul style={{ display: "grid", gap: 8 }}>
+                    {order.documents.map((doc) => (
+                      <li key={doc.id}>
+                        <a
+                          href={`/api/files/${doc.fileId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ fontSize: 14, fontWeight: 600, color: "var(--blue)" }}
+                        >
+                          {doc.label ?? doc.docType ?? "Document"}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </>
               )}
             </aside>
           </div>
