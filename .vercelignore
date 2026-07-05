@@ -1,0 +1,8 @@
+# Never ship local env files to the Vercel build.
+# Production env vars come from the Vercel dashboard. Shipping .env caused
+# NEXTAUTH_URL=http://localhost:3000 to leak into prod, which made the auth
+# handler set a NON-secure session cookie while the HTTPS edge middleware
+# expected the __Secure- cookie — breaking every logged-in session.
+.env
+.env.*
+!.env.example
