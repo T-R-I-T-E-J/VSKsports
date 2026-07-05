@@ -7,6 +7,7 @@ import { cn } from "@/lib/cn";
 import { Brand } from "./Brand";
 import { Button } from "@/components/ui/Button";
 import { STOREFRONT_NAV } from "@/lib/nav";
+import { logout } from "@/app/actions/account";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { LocaleSwitch } from "@/components/i18n/LocaleSwitch";
 import {
@@ -25,10 +26,20 @@ import {
 const iconBtn =
   "grid h-10 w-10 place-items-center rounded-md text-ink transition-colors hover:bg-paper-2";
 
-export function SiteHeader({ cartCount = 0 }: { cartCount?: number }) {
+type HeaderUser = { name?: string | null; email?: string | null; role?: string } | null;
+
+export function SiteHeader({
+  cartCount = 0,
+  user = null,
+}: {
+  cartCount?: number;
+  user?: HeaderUser;
+}) {
   const pathname = usePathname();
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
+  const isStaff = user?.role === "ADMIN" || user?.role === "STAFF";
+  const firstName = user?.name?.trim() ? user.name.trim().split(/\s+/)[0] : "Account";
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(href + "/");
 
@@ -59,12 +70,38 @@ export function SiteHeader({ cartCount = 0 }: { cartCount?: number }) {
             </span>
           </div>
           <div className="flex items-center gap-5">
-            <Link href="/login" className="transition-colors hover:text-white">
-              {t("header.signIn")}
-            </Link>
-            <Link href="/register" className="font-semibold text-white transition-colors hover:text-white/80">
-              {t("header.register")}
-            </Link>
+            {user ? (
+              <>
+                <Link href="/account" className="transition-colors hover:text-white">
+                  {firstName}
+                </Link>
+                {isStaff && (
+                  <Link href="/admin/dashboard" className="transition-colors hover:text-white">
+                    Admin
+                  </Link>
+                )}
+                <form action={logout}>
+                  <button
+                    type="submit"
+                    className="uppercase tracking-[0.1em] transition-colors hover:text-white"
+                  >
+                    Sign Out
+                  </button>
+                </form>
+              </>
+            ) : (
+              <>
+                <Link href="/login" className="transition-colors hover:text-white">
+                  {t("header.signIn")}
+                </Link>
+                <Link
+                  href="/register"
+                  className="font-semibold text-white transition-colors hover:text-white/80"
+                >
+                  {t("header.register")}
+                </Link>
+              </>
+            )}
             <Link href="/dealers" className="transition-colors hover:text-white">
               {t("header.becomeDealer")}
             </Link>
@@ -169,14 +206,31 @@ export function SiteHeader({ cartCount = 0 }: { cartCount?: number }) {
             Account
           </div>
           <div className="flex flex-col gap-1 text-[15px]">
-            <Link href="/login" onClick={() => setOpen(false)} className="inline-flex items-center gap-3 py-2">
-              <IconUser width={18} height={18} />
-              Sign In
-            </Link>
-            <Link href="/register" onClick={() => setOpen(false)} className="inline-flex items-center gap-3 py-2">
-              <IconUser width={18} height={18} />
-              Create Account
-            </Link>
+            {user ? (
+              <>
+                <Link href="/account" onClick={() => setOpen(false)} className="inline-flex items-center gap-3 py-2">
+                  <IconUser width={18} height={18} />
+                  My Account
+                </Link>
+                {isStaff && (
+                  <Link href="/admin/dashboard" onClick={() => setOpen(false)} className="inline-flex items-center gap-3 py-2">
+                    <IconUser width={18} height={18} />
+                    Admin Panel
+                  </Link>
+                )}
+              </>
+            ) : (
+              <>
+                <Link href="/login" onClick={() => setOpen(false)} className="inline-flex items-center gap-3 py-2">
+                  <IconUser width={18} height={18} />
+                  Sign In
+                </Link>
+                <Link href="/register" onClick={() => setOpen(false)} className="inline-flex items-center gap-3 py-2">
+                  <IconUser width={18} height={18} />
+                  Create Account
+                </Link>
+              </>
+            )}
             <Link href="/wishlist" onClick={() => setOpen(false)} className="inline-flex items-center gap-3 py-2">
               <IconHeart width={18} height={18} />
               Wishlist
@@ -189,6 +243,18 @@ export function SiteHeader({ cartCount = 0 }: { cartCount?: number }) {
               <IconHelp width={18} height={18} />
               Help &amp; Support
             </Link>
+            {user && (
+              <form action={logout}>
+                <button
+                  type="submit"
+                  onClick={() => setOpen(false)}
+                  className="inline-flex w-full items-center gap-3 py-2 text-left text-red"
+                >
+                  <IconUser width={18} height={18} />
+                  Sign Out
+                </button>
+              </form>
+            )}
           </div>
         </div>
         <div className="flex flex-col gap-2 border-t border-line p-5">
