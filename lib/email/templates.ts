@@ -203,6 +203,31 @@ export function shippingUpdate(
 }
 
 // ============================================================
+// 2b) Password reset
+// ============================================================
+export function passwordReset(user: { name?: string | null }, resetUrl: string): EmailTemplate {
+  const body = [
+    p(`Hi ${esc(firstName(user.name))},`),
+    p("We received a request to reset your VSK Sports password. Click the button below to choose a new one — this link expires in 1 hour."),
+    `<p style="text-align:center;margin:24px 0 8px;">${btn("Reset Password", resetUrl)}</p>`,
+    `<p style="font-size:13px;line-height:1.6;color:${STEEL};margin:16px 0 0;">If you didn't request this, you can safely ignore this email — your password won't change.</p>`,
+  ].join("");
+
+  return {
+    subject: "Reset your VSK Sports password",
+    html: shell({
+      hero: {
+        bg: `linear-gradient(150deg,${BLUE_INK},${BLUE})`,
+        icon: "🔑",
+        title: "Password Reset",
+        sub: "Choose a new password",
+      },
+      body,
+    }),
+  };
+}
+
+// ============================================================
 // 3) Welcome
 // ============================================================
 export function welcome(user: { name?: string | null }): EmailTemplate {

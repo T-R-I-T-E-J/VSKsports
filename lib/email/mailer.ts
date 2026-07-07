@@ -12,6 +12,7 @@ import {
   shippingUpdate,
   welcome,
   reviewRequest,
+  passwordReset,
 } from "@/lib/email/templates";
 
 export type SendEmailInput = {
@@ -207,6 +208,16 @@ export async function sendWelcomeEmail(user: {
 }): Promise<SendEmailResult> {
   const tpl = welcome(user);
   return sendEmail({ to: user.email, type: "WELCOME", subject: tpl.subject, html: tpl.html });
+}
+
+/** PASSWORD_RESET — sends a one-time reset link to the user. */
+export async function sendPasswordResetEmail(
+  email: string,
+  resetUrl: string,
+  name?: string | null,
+): Promise<SendEmailResult> {
+  const tpl = passwordReset({ name }, resetUrl);
+  return sendEmail({ to: email, type: "PASSWORD_RESET", subject: tpl.subject, html: tpl.html });
 }
 
 /** REVIEW_REQUEST — exported helper for the post-delivery flow (Wave 2). */

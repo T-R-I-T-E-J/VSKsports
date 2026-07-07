@@ -12,10 +12,12 @@ import { Eyebrow } from "@/components/ui/Eyebrow";
 export function LoginForm({
   heading = "Sign in",
   sub,
+  notice,
   callbackUrl = "/",
 }: {
   heading?: string;
   sub?: string;
+  notice?: string;
   callbackUrl?: string;
 }) {
   const router = useRouter();
@@ -48,6 +50,14 @@ export function LoginForm({
         {heading}
       </h1>
       {sub && <p className="mt-1 text-[14px] text-steel">{sub}</p>}
+      {notice && (
+        <p
+          role="status"
+          className="mt-3 rounded-md border border-[#1FA855]/30 bg-[#1FA855]/10 px-3 py-2 text-[13px] text-[#0E7A43]"
+        >
+          {notice}
+        </p>
+      )}
 
       <label className="mt-6 block font-mono text-[11px] uppercase tracking-[0.12em] text-mute">
         Email
@@ -72,6 +82,11 @@ export function LoginForm({
         onChange={(e) => setPassword(e.target.value)}
         className="mt-1.5"
       />
+      <div className="mt-2 text-right">
+        <Link href="/forgot-password" className="text-[13px] text-steel transition-colors hover:text-blue hover:underline">
+          Forgot password?
+        </Link>
+      </div>
 
       {error && <p className="mt-3 text-[14px] text-red">{error}</p>}
 
