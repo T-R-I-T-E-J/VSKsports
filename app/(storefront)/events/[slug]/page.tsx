@@ -139,11 +139,12 @@ export default async function EventDetailPage({
               <div style={{ height: 8, background: "var(--paper-3)", borderRadius: 999, overflow: "hidden", margin: "14px 0" }}>
                 <div style={{ height: "100%", width: "78%", background: "var(--blue)", borderRadius: 999 }} />
               </div>
-              <SubmitForm style={{ display: "grid", gap: 14, marginTop: 6 }} message="Registered! Check your email for details.">
-                <div className="field"><label>Full name</label><input required placeholder="Your name" /></div>
-                <div className="field"><label>Phone</label><input required placeholder="+91" /></div>
-                <div className="field"><label>Category</label><select>{CATEGORIES.map((c) => <option key={c}>{c}</option>)}</select></div>
-                <div className="field"><label>Event</label><select><option>Air Rifle</option><option>Air Pistol</option><option>Both</option></select></div>
+              <SubmitForm style={{ display: "grid", gap: 14, marginTop: 6 }} subject={`New event registration: ${event.title} — VSK Sports`} message="Registered! We'll email you the details shortly.">
+                <input type="hidden" name="event" value={event.title} />
+                <div className="field"><label>Full name</label><input name="name" required placeholder="Your name" /></div>
+                <div className="field"><label>Phone</label><input name="phone" required placeholder="+91" /></div>
+                <div className="field"><label>Category</label><select name="category">{CATEGORIES.map((c) => <option key={c}>{c}</option>)}</select></div>
+                <div className="field"><label>Discipline</label><select name="discipline"><option>Air Rifle</option><option>Air Pistol</option><option>Both</option></select></div>
                 <button className="btn btn--red" style={{ width: "100%", justifyContent: "center" }}>Register · ₹800</button>
               </SubmitForm>
               <div className="pdp__trust" style={{ marginTop: 16, background: "var(--paper-2)" }}>

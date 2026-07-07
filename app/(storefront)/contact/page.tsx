@@ -72,13 +72,13 @@ export default function ContactPage() {
             <div className="card card--pad">
               <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 28, textTransform: "uppercase", margin: "0 0 6px" }}>Send a message</h2>
               <p style={{ color: "var(--steel)", fontSize: 15, marginBottom: 22 }}>We typically reply within a few hours during business days.</p>
-              <SubmitForm style={{ display: "grid", gap: 18 }} message="Message sent! We'll get back to you shortly.">
+              <SubmitForm style={{ display: "grid", gap: 18 }} subject="New contact message — VSK Sports" message="Message sent! We'll get back to you shortly.">
                 <div className="form-grid">
-                  <div className="field"><label>Name <span className="req">*</span></label><input required /></div>
-                  <div className="field"><label>Phone <span className="req">*</span></label><input placeholder="+91" required /></div>
-                  <div className="field field--full"><label>Email</label><input type="email" /></div>
-                  <div className="field field--full"><label>I&apos;m reaching out about</label><select><option>A product enquiry</option><option>Bulk / academy order</option><option>Training programs</option><option>Becoming a dealer</option><option>Order / delivery support</option><option>Something else</option></select></div>
-                  <div className="field field--full"><label>Message <span className="req">*</span></label><textarea placeholder="How can we help?" required /></div>
+                  <div className="field"><label>Name <span className="req">*</span></label><input name="name" required /></div>
+                  <div className="field"><label>Phone <span className="req">*</span></label><input name="phone" placeholder="+91" required /></div>
+                  <div className="field field--full"><label>Email</label><input name="email" type="email" /></div>
+                  <div className="field field--full"><label>I&apos;m reaching out about</label><select name="topic"><option>A product enquiry</option><option>Bulk / academy order</option><option>Training programs</option><option>Becoming a dealer</option><option>Order / delivery support</option><option>Something else</option></select></div>
+                  <div className="field field--full"><label>Message <span className="req">*</span></label><textarea name="message" placeholder="How can we help?" required /></div>
                 </div>
                 <button className="btn btn--primary" style={{ justifyContent: "center" }}>
                   Send Message

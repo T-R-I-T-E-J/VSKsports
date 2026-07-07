@@ -146,15 +146,15 @@ export default async function TrainingPage() {
             <h2 className="h-sec" style={{ fontSize: 38, marginTop: 14 }}>Reserve your spot</h2>
             <p className="lead" style={{ margin: "14px auto 0" }}>Tell us a bit about yourself and we&apos;ll match you to the right batch.</p>
           </div>
-          <SubmitForm className="card card--pad" style={{ display: "grid", gap: 18 }} message="Thanks! We'll call you within 24 hours to confirm.">
+          <SubmitForm className="card card--pad" style={{ display: "grid", gap: 18 }} subject="New training registration — VSK Sports" message="Thanks! We'll call you within 24 hours to confirm.">
             <div className="form-grid">
-              <div className="field"><label>Full name <span className="req">*</span></label><input placeholder="Your name" required /></div>
-              <div className="field"><label>Phone <span className="req">*</span></label><input placeholder="+91" required /></div>
-              <div className="field"><label>Email</label><input type="email" placeholder="you@email.com" /></div>
-              <div className="field"><label>City</label><input placeholder="City" /></div>
-              <div className="field"><label>Discipline</label><select><option>Air Rifle</option><option>Air Pistol</option><option>Not sure yet</option></select></div>
-              <div className="field"><label>Experience</label><select><option>Complete beginner</option><option>Some experience</option><option>Intermediate</option><option>Advanced</option></select></div>
-              <div className="field field--full"><label>Program of interest</label><select><option>Beginner Air Rifle Camp</option><option>Advanced Pistol Workshop</option><option>Personal Coaching</option><option>Maintenance Certification</option></select></div>
+              <div className="field"><label>Full name <span className="req">*</span></label><input name="name" placeholder="Your name" required /></div>
+              <div className="field"><label>Phone <span className="req">*</span></label><input name="phone" placeholder="+91" required /></div>
+              <div className="field"><label>Email</label><input name="email" type="email" placeholder="you@email.com" /></div>
+              <div className="field"><label>City</label><input name="city" placeholder="City" /></div>
+              <div className="field"><label>Discipline</label><select name="discipline"><option>Air Rifle</option><option>Air Pistol</option><option>Not sure yet</option></select></div>
+              <div className="field"><label>Experience</label><select name="experience"><option>Complete beginner</option><option>Some experience</option><option>Intermediate</option><option>Advanced</option></select></div>
+              <div className="field field--full"><label>Program of interest</label><select name="program"><option>Beginner Air Rifle Camp</option><option>Advanced Pistol Workshop</option><option>Personal Coaching</option><option>Maintenance Certification</option></select></div>
             </div>
             <button className="btn btn--primary" style={{ justifyContent: "center" }}>Submit Registration</button>
           </SubmitForm>
