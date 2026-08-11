@@ -1,3 +1,8 @@
+// Nonce-based CSP requires per-request rendering: a prerendered page would ship
+// HTML baked at build time, whose scripts carry no nonce matching the CSP header
+// issued for the request — the browser would block every script on the page.
+export const dynamic = "force-dynamic";
+
 import { prisma } from "@/lib/db";
 import { PageHead, Panel, inrCompact } from "../_lib/ui";
 import { LineChart, Bars, Donut } from "../_lib/charts";

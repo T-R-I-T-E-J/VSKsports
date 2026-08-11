@@ -23,6 +23,20 @@ async function uniqueOrderNumber(): Promise<string> {
   return `VSK-${year}-${Date.now()}`;
 }
 
+/**
+ * SECURITY: Server Action arguments are attacker-controlled and TypeScript
+ * types are erased at runtime, so `shipping` arrives as an arbitrary value.
+ * `shippingCost()` treats anything it doesn't recognise as "standard", which
+ * hides the bad input instead of rejecting it. Pin it to the three methods the
+ * UI actually offers so the stored order can never be priced off an
+ * unrecognised method.
+ */
+const SHIPPING_METHODS: readonly ShippingMethod[] = ["standard", "express", "pickup"];
+
+function parseShipping(value: unknown): ShippingMethod | null {
+  return SHIPPING_METHODS.includes(value as ShippingMethod) ? (value as ShippingMethod) : null;
+}
+
 export type StartCheckoutResult =
   | { mode: "razorpay"; orderId: string; razorpayOrderId: string; amount: number; keyId: string; number: string }
   | { mode: "mock"; orderId: string; amount: number; number: string };
@@ -35,6 +49,9 @@ export async function startCheckout(
   const session = await auth();
   const userId = session?.user?.id;
   if (!userId) throw new Error("Not authenticated");
+
+  const method = parseShipping(shipping);
+  if (!method) throw new Error("Please choose a valid delivery method");
 
   const cart = await getCart();
   if (!cart || cart.items.length === 0) throw new Error("Your cart is empty");
@@ -49,8 +66,15 @@ export async function startCheckout(
     throw new Error("Online payments are temporarily unavailable. Please try again later.");
   }
 
+  // SECURITY: quantity is validated in addToCart/updateCartItemQty, but this is
+  // the money path — re-check here so a row poisoned by any other writer can't
+  // subtract from the subtotal and dial the charged amount down.
+  if (cart.items.some((i) => !Number.isInteger(i.quantity) || i.quantity < 1)) {
+    throw new Error("Your cart contains an invalid quantity. Please review it and try again.");
+  }
+
   const subtotal = cart.items.reduce((s, i) => s + i.product.priceInr * i.quantity, 0);
-  const totals = computeTotals(subtotal, shipping);
+  const totals = computeTotals(subtotal, method);
   const number = await uniqueOrderNumber();
 
   const order = await prisma.order.create({
@@ -141,10 +165,23 @@ export async function confirmRazorpayPayment(
 
 /** Dev/test only — simulates a successful payment when Razorpay keys are absent. */
 export async function confirmMockPayment(orderId: string): Promise<{ ok: true; orderId: string }> {
+  // SECURITY: this marks an order PAID without collecting money, so it must be
+  // impossible to reach in production. `isRazorpayConfigured` alone is a config
+  // check, not a boundary — if the Razorpay env vars were ever dropped or
+  // mis-rotated in prod, this Server Action (a public POST endpoint) would let a
+  // signed-in customer settle their own PENDING orders for free.
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("Payment could not be completed. Please try again.");
+  }
   if (isRazorpayConfigured) throw new Error("Mock payment is disabled when Razorpay is configured");
   const session = await auth();
+  // SECURITY: must be a concrete id — Prisma drops a `where` key whose value is
+  // `undefined`, so an unauthenticated caller would otherwise match ANY user's
+  // pending order and mark it paid.
+  const userId = session?.user?.id;
+  if (!userId) throw new Error("Not authenticated");
   const order = await prisma.order.findFirst({
-    where: { id: orderId, userId: session?.user?.id ?? undefined, paymentStatus: "PENDING" },
+    where: { id: orderId, userId, paymentStatus: "PENDING" },
   });
   if (!order) throw new Error("Order not found");
   await finalizeOrder(orderId, `mock_${orderId.slice(0, 10)}`);

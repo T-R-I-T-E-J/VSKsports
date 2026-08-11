@@ -4,6 +4,11 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { sendWelcomeEmail } from "@/lib/email/mailer";
+import { clientIp, rateLimit, retryAfterLabel } from "@/lib/rate-limit";
+
+// New accounts tolerated per IP per hour.
+const REGISTER_WINDOW_MS = 60 * 60 * 1000;
+const REGISTER_MAX_PER_IP = 5;
 
 const registerSchema = z.object({
   name: z.string().trim().max(80).optional(),
@@ -25,6 +30,19 @@ export async function registerUser(input: RegisterInput): Promise<RegisterResult
   const parsed = registerSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid details." };
+  }
+
+  // SECURITY: cap automated account creation from a single source.
+  const limited = await rateLimit(
+    `register:ip:${await clientIp()}`,
+    REGISTER_MAX_PER_IP,
+    REGISTER_WINDOW_MS,
+  );
+  if (!limited.ok) {
+    return {
+      ok: false,
+      error: `Too many accounts created from this network. Please try again in ${retryAfterLabel(limited.retryAfterSec)}.`,
+    };
   }
 
   const { name, email, phone, password } = parsed.data;

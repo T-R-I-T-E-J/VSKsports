@@ -44,7 +44,40 @@ const CATEGORIES: [string, string][] = [
   ["vsk", "VSK Products"],
 ];
 
+/**
+ * DESTRUCTIVE. `clear()` empties every table before reseeding, so running this
+ * against a production database would delete real orders, customers and
+ * payments. Guarded on two independent signals — NODE_ENV and the host in
+ * DATABASE_URL — because a seed run is usually a local muscle-memory command
+ * typed with the wrong shell env loaded.
+ *
+ * Override deliberately with ALLOW_DESTRUCTIVE_SEED=yes if you really do mean
+ * to wipe a remote database.
+ */
+function assertNotProduction() {
+  if (process.env.ALLOW_DESTRUCTIVE_SEED === "yes") return;
+
+  const url = process.env.DATABASE_URL ?? "";
+  const host = (() => {
+    try {
+      return new URL(url).hostname;
+    } catch {
+      return "";
+    }
+  })();
+  const isLocal = host === "localhost" || host === "127.0.0.1" || host === "::1" || host === "db";
+
+  if (process.env.NODE_ENV === "production" || !isLocal) {
+    throw new Error(
+      `Refusing to seed: this wipes every table and the target database is not local ` +
+        `(NODE_ENV=${process.env.NODE_ENV ?? "unset"}, host=${host || "unparseable"}). ` +
+        `Set ALLOW_DESTRUCTIVE_SEED=yes only if you intend to erase it.`,
+    );
+  }
+}
+
 async function clear() {
+  assertNotProduction();
   await prisma.translation.deleteMany();
   await prisma.staffAction.deleteMany();
   await prisma.inventoryAdjustment.deleteMany();
@@ -529,8 +562,13 @@ async function main() {
     prisma.order.count(),
     prisma.brand.count(),
   ]);
+  // SECURITY: never echo an operator-supplied SEED_PASSWORD — seed output lands
+  // in CI/deployment logs. Only the well-known dev default is safe to print.
+  const credentialNote = process.env.SEED_PASSWORD
+    ? "Login password: the SEED_PASSWORD you supplied (admin@vsksports.in)."
+    : `Dev login password: "${seedPassword}" (admin@vsksports.in).`;
   console.log(
-    `Seed complete → ${bc} brands, ${pc} products, ${uc} users, ${oc} orders. Dev login password: "vsksports" (admin@vsksports.in).`,
+    `Seed complete → ${bc} brands, ${pc} products, ${uc} users, ${oc} orders. ${credentialNote}`,
   );
 }
 

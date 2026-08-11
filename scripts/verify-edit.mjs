@@ -1,4 +1,8 @@
 const base = "http://localhost:3001";
+
+// Dev fixture credentials for the locally seeded admin. Override with
+// SEED_PASSWORD when the local seed used a non-default password.
+const ADMIN_PASSWORD = process.env.SEED_PASSWORD || "vsksports";
 const cookies = {};
 function absorb(res) {
   const list = res.headers.getSetCookie ? res.headers.getSetCookie() : [];
@@ -16,7 +20,7 @@ const { csrfToken } = await r.json();
 r = await fetch(`${base}/api/auth/callback/credentials`, {
   method: "POST",
   headers: { "content-type": "application/x-www-form-urlencoded", cookie: ch() },
-  body: new URLSearchParams({ csrfToken, email: "admin@vsksports.in", password: "vsksports", callbackUrl: `${base}/` }),
+  body: new URLSearchParams({ csrfToken, email: "admin@vsksports.in", password: ADMIN_PASSWORD, callbackUrl: `${base}/` }),
   redirect: "manual",
 });
 absorb(r);

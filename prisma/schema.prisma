@@ -9,7 +9,15 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  // Runtime connection. In production this is the POOLED endpoint (Neon
+  // `-pooler` host / PgBouncer): every serverless instance opens its own pool,
+  // so an unpooled URL exhausts Postgres connections under modest traffic.
   url      = env("DATABASE_URL")
+  // Migrations need a DIRECT connection — `prisma migrate deploy` cannot run
+  // over Neon's transaction-mode pooler. DATABASE_URL is the `-pooler` host
+  // (runtime; each serverless instance opens its own pool), DIRECT_URL is the
+  // same host without `-pooler`. Locally both point at the Docker Postgres.
+  directUrl = env("DIRECT_URL")
 }
 
 // ============================================================
@@ -829,4 +837,17 @@ model Translation {
   value     String
 
   @@unique([locale, namespace, key])
+}
+
+// ============================================================
+// Rate limiting — fixed-window counters for unauthenticated
+// endpoints (login, register, password reset). DB-backed so the
+// limit holds across serverless instances, unlike an in-memory Map.
+// ============================================================
+model RateLimit {
+  key       String   @id
+  count     Int      @default(0)
+  expiresAt DateTime
+
+  @@index([expiresAt])
 }

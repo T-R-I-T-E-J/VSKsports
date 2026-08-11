@@ -64,7 +64,7 @@ const consoleTransport: EmailTransport = {
 let cachedTransporter: Transporter | null = null;
 function getTransporter(): Transporter {
   if (!cachedTransporter) {
-    const port = Number(process.env.SMTP_PORT ?? 587);
+    const port = Number(process.env.SMTP_PORT || 587);
     cachedTransporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port,

@@ -5,8 +5,17 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { sendPasswordResetEmail } from "@/lib/email/mailer";
+import { clientIp, rateLimit, retryAfterLabel } from "@/lib/rate-limit";
 
 const TOKEN_TTL_MS = 60 * 60 * 1000; // 1 hour
+
+// Reset emails per address, and per source IP, each hour.
+const RESET_REQUEST_WINDOW_MS = 60 * 60 * 1000;
+const RESET_MAX_PER_EMAIL = 3;
+const RESET_MAX_PER_IP = 10;
+// Token submissions tolerated per IP per 15 minutes.
+const RESET_SUBMIT_WINDOW_MS = 15 * 60 * 1000;
+const RESET_SUBMIT_MAX_PER_IP = 10;
 const hashToken = (raw: string) => crypto.createHash("sha256").update(raw).digest("hex");
 
 /**
@@ -17,6 +26,16 @@ const hashToken = (raw: string) => crypto.createHash("sha256").update(raw).diges
 export async function requestPasswordReset(email: string): Promise<{ ok: true }> {
   const normalized = String(email).trim().toLowerCase();
   if (!z.string().email().safeParse(normalized).success) return { ok: true };
+
+  // SECURITY: each call sends mail, so an unthrottled caller could bomb any
+  // registered address. When the cap is hit we skip the send but still return
+  // the same { ok: true } — silence here preserves the non-enumeration
+  // guarantee this action is built around.
+  const [byEmail, byIp] = await Promise.all([
+    rateLimit(`reset-req:email:${normalized}`, RESET_MAX_PER_EMAIL, RESET_REQUEST_WINDOW_MS),
+    rateLimit(`reset-req:ip:${await clientIp()}`, RESET_MAX_PER_IP, RESET_REQUEST_WINDOW_MS),
+  ]);
+  if (!byEmail.ok || !byIp.ok) return { ok: true };
 
   const user = await prisma.user.findUnique({
     where: { email: normalized },
@@ -57,6 +76,20 @@ export async function resetPassword(
     return { ok: false, error: "Password must be at least 8 characters." };
   }
   if (!token) return { ok: false, error: "This reset link is invalid." };
+
+  // SECURITY: throttle token submissions so the 32-byte token can't be attacked
+  // by volume.
+  const limited = await rateLimit(
+    `reset-submit:ip:${await clientIp()}`,
+    RESET_SUBMIT_MAX_PER_IP,
+    RESET_SUBMIT_WINDOW_MS,
+  );
+  if (!limited.ok) {
+    return {
+      ok: false,
+      error: `Too many attempts. Please try again in ${retryAfterLabel(limited.retryAfterSec)}.`,
+    };
+  }
 
   const record = await prisma.verificationToken.findUnique({
     where: { identifier_token: { identifier: normalized, token: hashToken(token) } },

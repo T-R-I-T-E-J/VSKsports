@@ -33,7 +33,7 @@ export const UPLOAD_RULES: Record<
   OTHER: { maxBytes: 8 * MB, mimes: [...IMG, "application/pdf"], visibility: "PRIVATE", image: false, staffOnly: true },
 };
 
-const DRIVER = process.env.STORAGE_DRIVER ?? "local";
+const DRIVER = process.env.STORAGE_DRIVER || "local";
 const PUBLIC_DIR = path.join(process.cwd(), "public", "uploads");
 const PRIVATE_DIR = path.join(process.cwd(), ".uploads-private");
 

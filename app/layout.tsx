@@ -18,7 +18,14 @@ const splineSansMono = Spline_Sans_Mono({
   display: "swap",
 });
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+// `??` is wrong here: Vercel supplies an unset env var as an EMPTY STRING, which
+// ?? happily passes through, and `new URL("")` throws ERR_INVALID_URL at build.
+// `||` treats empty as missing. VERCEL_URL covers preview deploys, whose
+// hostname is generated per-deployment and so cannot be hardcoded.
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "") ||
+  "http://localhost:3000";
 const DESCRIPTION =
   "Precision air rifles, pistols and pro-grade gear — backed by training, events and a nationwide dealer network.";
 

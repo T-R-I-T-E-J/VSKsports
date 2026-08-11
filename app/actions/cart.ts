@@ -4,11 +4,30 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { getOrCreateCart } from "@/lib/cart";
 
+/** Max units of a single product+variant per cart line. */
+const MAX_QTY = 99;
+
+/**
+ * SECURITY: these are Server Actions — directly invocable POST endpoints, so
+ * every argument is attacker-controlled and the TypeScript types are erased at
+ * runtime. A negative quantity reaches checkout's subtotal reduce and lets an
+ * attacker dial the Razorpay charge down to an arbitrary amount, so quantity
+ * must be validated here. Returns null when the input isn't a usable quantity.
+ */
+function validQty(quantity: unknown): number | null {
+  return Number.isInteger(quantity) && (quantity as number) >= 1
+    ? (quantity as number)
+    : null;
+}
+
 export async function addToCart(
   productId: string,
   quantity = 1,
   variantLabel?: string | null,
 ) {
+  const qty = validQty(quantity);
+  if (qty === null) return;
+
   const cart = await getOrCreateCart();
   const v = variantLabel ?? "";
   const existing = await prisma.cartItem.findFirst({
@@ -17,23 +36,34 @@ export async function addToCart(
   if (existing) {
     await prisma.cartItem.update({
       where: { id: existing.id },
-      data: { quantity: existing.quantity + quantity },
+      // Clamped so repeated adds can't overflow past the per-line cap.
+      data: { quantity: Math.min(MAX_QTY, existing.quantity + qty) },
     });
   } else {
     await prisma.cartItem.create({
-      data: { cartId: cart.id, productId, variantLabel: v, quantity },
+      data: { cartId: cart.id, productId, variantLabel: v, quantity: Math.min(MAX_QTY, qty) },
     });
   }
   revalidatePath("/cart");
 }
 
 export async function updateCartItemQty(itemId: string, quantity: number) {
+  if (!Number.isInteger(quantity)) return;
   if (quantity < 1) return removeCartItem(itemId);
-  await prisma.cartItem.update({ where: { id: itemId }, data: { quantity } });
+
+  // Scope to the caller's own cart — `itemId` alone would let anyone edit any
+  // cart item. updateMany is a no-op when the item isn't ours.
+  const cart = await getOrCreateCart();
+  await prisma.cartItem.updateMany({
+    where: { id: itemId, cartId: cart.id },
+    data: { quantity: Math.min(MAX_QTY, quantity) },
+  });
   revalidatePath("/cart");
 }
 
 export async function removeCartItem(itemId: string) {
-  await prisma.cartItem.delete({ where: { id: itemId } }).catch(() => {});
+  // Same ownership scoping as above; deleteMany is a no-op when not ours.
+  const cart = await getOrCreateCart();
+  await prisma.cartItem.deleteMany({ where: { id: itemId, cartId: cart.id } });
   revalidatePath("/cart");
 }

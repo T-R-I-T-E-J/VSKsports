@@ -1,3 +1,8 @@
+// Nonce-based CSP requires per-request rendering: a prerendered page would ship
+// HTML baked at build time, whose scripts carry no nonce matching the CSP header
+// issued for the request — the browser would block every script on the page.
+export const dynamic = "force-dynamic";
+
 // Dev-only preview of the four transactional email templates so they can be
 // visually verified against design_handoff_vsk_sports/Email-Templates.html.
 // Each template renders in a sandboxed iframe (emails are standalone HTML).

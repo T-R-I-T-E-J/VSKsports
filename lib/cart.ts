@@ -30,6 +30,10 @@ export async function getOrCreateCart() {
   const newToken = randomUUID();
   jar.set(CART_COOKIE, newToken, {
     httpOnly: true,
+    // The token is the only thing binding a visitor to their cart, so it must
+    // not travel over plaintext in production. Left off in dev so the cookie
+    // still works on http://localhost.
+    secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24 * 60,

@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
   // SECURITY: the Blob driver can only store public objects. Reject PRIVATE
   // kinds (dealer/order docs) until the signed/client-upload path is wired,
   // so sensitive PII can never be published to a public URL (UPLOAD_PLAN.md §17).
-  if (rule.visibility === "PRIVATE" && (process.env.STORAGE_DRIVER ?? "local") === "blob") {
+  if (rule.visibility === "PRIVATE" && (process.env.STORAGE_DRIVER || "local") === "blob") {
     return NextResponse.json({ error: "Private document uploads are not enabled yet." }, { status: 501 });
   }
 
