@@ -1,17 +1,16 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getCart } from "@/lib/cart";
 import { computeTotals, type ShippingMethod } from "@/lib/pricing";
+import { settleOrderPaid, markOrderFailed } from "@/lib/orders";
 import {
   razorpay,
   isRazorpayConfigured,
   verifyPaymentSignature,
   RAZORPAY_KEY_ID,
 } from "@/lib/razorpay";
-import { sendOrderConfirmationEmail } from "@/lib/email/mailer";
 
 async function uniqueOrderNumber(): Promise<string> {
   const year = new Date().getFullYear();
@@ -37,11 +36,18 @@ function parseShipping(value: unknown): ShippingMethod | null {
   return SHIPPING_METHODS.includes(value as ShippingMethod) ? (value as ShippingMethod) : null;
 }
 
-export type StartCheckoutResult =
-  | { mode: "razorpay"; orderId: string; razorpayOrderId: string; amount: number; keyId: string; number: string }
-  | { mode: "mock"; orderId: string; amount: number; number: string };
+const PAYMENTS_UNCONFIGURED =
+  "Online payments are not configured. Please contact support.";
 
-/** Creates a pending order from the cart and (if configured) a Razorpay order. */
+export type StartCheckoutResult = {
+  orderId: string;
+  razorpayOrderId: string;
+  amount: number;
+  keyId: string;
+  number: string;
+};
+
+/** Creates a pending order from the cart, plus the matching Razorpay order. */
 export async function startCheckout(
   addressId: string,
   shipping: ShippingMethod,
@@ -53,18 +59,16 @@ export async function startCheckout(
   const method = parseShipping(shipping);
   if (!method) throw new Error("Please choose a valid delivery method");
 
+  // Razorpay is the ONLY payment path — there is no mock/simulated settlement
+  // to fall through to. Check before writing anything so a missing key can
+  // never leave an orphaned PENDING order behind.
+  if (!isRazorpayConfigured || !razorpay) throw new Error(PAYMENTS_UNCONFIGURED);
+
   const cart = await getCart();
   if (!cart || cart.items.length === 0) throw new Error("Your cart is empty");
 
   const address = await prisma.address.findFirst({ where: { id: addressId, userId } });
   if (!address) throw new Error("Please choose a valid delivery address");
-
-  // Guard: in production we must NEVER fall through to the mock payment path
-  // (which marks an order PAID with a fake id and collects no money). If the
-  // Razorpay keys are missing in prod, fail loudly instead of shipping free orders.
-  if (!isRazorpayConfigured && process.env.NODE_ENV === "production") {
-    throw new Error("Online payments are temporarily unavailable. Please try again later.");
-  }
 
   // SECURITY: quantity is validated in addToCart/updateCartItemQty, but this is
   // the money path — re-check here so a row poisoned by any other writer can't
@@ -73,9 +77,31 @@ export async function startCheckout(
     throw new Error("Your cart contains an invalid quantity. Please review it and try again.");
   }
 
+  // Don't take money for stock we don't have.
+  const inventory = await prisma.inventoryItem.findMany({
+    where: { productId: { in: cart.items.map((i) => i.productId) } },
+    select: { productId: true, stock: true },
+  });
+  const stockByProduct = new Map(inventory.map((i) => [i.productId, i.stock]));
+  const short = cart.items.find((i) => (stockByProduct.get(i.productId) ?? 0) < i.quantity);
+  if (short) {
+    throw new Error(`"${short.product.name}" is out of stock. Please update your cart.`);
+  }
+
   const subtotal = cart.items.reduce((s, i) => s + i.product.priceInr * i.quantity, 0);
   const totals = computeTotals(subtotal, method);
   const number = await uniqueOrderNumber();
+
+  // Bind the cookie cart to the user so the webhook — which has no cookie —
+  // can still clear it after settling. Cart.userId is @unique, so release any
+  // older cart this user owns first.
+  if (cart.userId !== userId) {
+    await prisma.cart.updateMany({
+      where: { userId, id: { not: cart.id } },
+      data: { userId: null },
+    });
+    await prisma.cart.update({ where: { id: cart.id }, data: { userId } });
+  }
 
   const order = await prisma.order.create({
     data: {
@@ -100,41 +126,46 @@ export async function startCheckout(
     },
   });
 
-  if (isRazorpayConfigured && razorpay) {
-    const rzp = await razorpay.orders.create({
-      amount: totals.totalInr * 100, // paise
-      currency: "INR",
-      receipt: order.number,
-      notes: { orderId: order.id },
-    });
-    await prisma.order.update({ where: { id: order.id }, data: { razorpayOrderId: rzp.id } });
-    return {
-      mode: "razorpay",
-      orderId: order.id,
-      razorpayOrderId: rzp.id,
-      amount: totals.totalInr * 100,
-      keyId: RAZORPAY_KEY_ID,
-      number: order.number,
-    };
-  }
-
-  return { mode: "mock", orderId: order.id, amount: totals.totalInr * 100, number: order.number };
+  return openGatewayOrder(order.id, order.number, totals.totalInr);
 }
 
-async function finalizeOrder(orderId: string, paymentId: string) {
-  await prisma.order.update({
-    where: { id: orderId },
-    data: { paymentStatus: "PAID", status: "PROCESSING", razorpayPaymentId: paymentId },
+/** Creates the Razorpay order for an existing internal order and stores its id. */
+async function openGatewayOrder(
+  orderId: string,
+  number: string,
+  totalInr: number,
+): Promise<StartCheckoutResult> {
+  if (!razorpay) throw new Error(PAYMENTS_UNCONFIGURED);
+  const amount = totalInr * 100; // paise
+  const rzp = await razorpay.orders.create({
+    amount,
+    currency: "INR",
+    receipt: number,
+    notes: { orderId },
   });
-  const cart = await getCart();
-  if (cart) await prisma.cartItem.deleteMany({ where: { cartId: cart.id } });
-  // Fire-and-forget: never block or fail checkout on email problems.
-  // (sendOrderConfirmationEmail also never throws; double safety.)
-  void sendOrderConfirmationEmail(orderId, { skipIfLogged: true }).catch((err) =>
-    console.error("[checkout] order confirmation email failed:", err),
-  );
-  revalidatePath("/", "layout");
-  revalidatePath("/cart");
+  await prisma.order.update({ where: { id: orderId }, data: { razorpayOrderId: rzp.id } });
+  return { orderId, razorpayOrderId: rzp.id, amount, keyId: RAZORPAY_KEY_ID, number };
+}
+
+/**
+ * Re-open payment on an order that already exists (failed card, dismissed
+ * modal). Charges the totals STORED on the order — never recomputed from the
+ * cart, which may have changed since — and reuses the same order row so a
+ * customer retrying three times doesn't leave three orphans behind.
+ */
+export async function retryPayment(orderId: string): Promise<StartCheckoutResult> {
+  const session = await auth();
+  const userId = session?.user?.id;
+  if (!userId) throw new Error("Not authenticated");
+  if (!isRazorpayConfigured || !razorpay) throw new Error(PAYMENTS_UNCONFIGURED);
+
+  const order = await prisma.order.findFirst({
+    where: { id: orderId, userId, paymentStatus: { not: "PAID" } },
+    select: { id: true, number: true, totalInr: true },
+  });
+  if (!order) throw new Error("Order not found");
+
+  return openGatewayOrder(order.id, order.number, order.totalInr);
 }
 
 export async function confirmRazorpayPayment(
@@ -159,31 +190,22 @@ export async function confirmRazorpayPayment(
   });
   if (!order) throw new Error("Order not found");
 
-  await finalizeOrder(order.id, razorpayPaymentId);
+  await settleOrderPaid(order.id, razorpayPaymentId);
   return { ok: true, orderId: order.id };
 }
 
-/** Dev/test only — simulates a successful payment when Razorpay keys are absent. */
-export async function confirmMockPayment(orderId: string): Promise<{ ok: true; orderId: string }> {
-  // SECURITY: this marks an order PAID without collecting money, so it must be
-  // impossible to reach in production. `isRazorpayConfigured` alone is a config
-  // check, not a boundary — if the Razorpay env vars were ever dropped or
-  // mis-rotated in prod, this Server Action (a public POST endpoint) would let a
-  // signed-in customer settle their own PENDING orders for free.
-  if (process.env.NODE_ENV === "production") {
-    throw new Error("Payment could not be completed. Please try again.");
-  }
-  if (isRazorpayConfigured) throw new Error("Mock payment is disabled when Razorpay is configured");
+/** Records a failed attempt so the order isn't left looking merely pending. */
+export async function markPaymentFailed(
+  orderId: string,
+  reason: string,
+): Promise<{ ok: true }> {
   const session = await auth();
-  // SECURITY: must be a concrete id — Prisma drops a `where` key whose value is
-  // `undefined`, so an unauthenticated caller would otherwise match ANY user's
-  // pending order and mark it paid.
   const userId = session?.user?.id;
   if (!userId) throw new Error("Not authenticated");
-  const order = await prisma.order.findFirst({
-    where: { id: orderId, userId, paymentStatus: "PENDING" },
-  });
+
+  const order = await prisma.order.findFirst({ where: { id: orderId, userId } });
   if (!order) throw new Error("Order not found");
-  await finalizeOrder(orderId, `mock_${orderId.slice(0, 10)}`);
-  return { ok: true, orderId };
+
+  await markOrderFailed(order.id, reason || "Payment failed");
+  return { ok: true };
 }

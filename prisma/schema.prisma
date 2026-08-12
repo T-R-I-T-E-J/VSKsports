@@ -383,8 +383,11 @@ model Order {
   totalInr          Int
   couponId          String?
   coupon            Coupon?       @relation(fields: [couponId], references: [id])
-  razorpayOrderId   String?
+  // Unique: this is the webhook's lookup key. Two orders must never share one
+  // gateway order, and the webhook should not scan the table to find it.
+  razorpayOrderId   String?       @unique
   razorpayPaymentId String?
+  failureReason     String? // set when a payment attempt fails (PaymentStatus.FAILED)
   trackingNumber    String?
   courier           String?
   adminNotes        String?
