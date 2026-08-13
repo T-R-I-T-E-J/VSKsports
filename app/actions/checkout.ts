@@ -39,6 +39,84 @@ function parseShipping(value: unknown): ShippingMethod | null {
 const PAYMENTS_UNCONFIGURED =
   "Online payments are not configured. Please contact support.";
 
+type StockLine = {
+  productId: string;
+  variantLabel: string | null;
+  quantity: number;
+  name: string;
+};
+
+/** Joins the two halves of a variant key without colliding on labels containing separators. */
+const variantKey = (productId: string, label: string) => `${productId}\u0000${label}`;
+
+/**
+ * Refuse the sale if any line exceeds available stock.
+ *
+ * Quantities are summed PER PRODUCT before comparing. Checking each cart row
+ * on its own let a cart holding two rows of the same product (one per variant)
+ * pass twice against the same stock — six plus six against a stock of ten.
+ *
+ * Variant stock is checked too, because `settleOrderPaid` decrements it as well.
+ * Checking only `InventoryItem` allowed a variant with zero stock to sell
+ * happily underneath a product with fifty in inventory. A label with no matching
+ * `ProductVariant` row is left to the product-level check rather than rejected:
+ * such a row decrements nothing at settlement, and treating it as unavailable
+ * here would break any product whose labels are not backed by variant rows.
+ */
+async function assertInStock(lines: StockLine[]): Promise<void> {
+  const perProduct = new Map<string, number>();
+  const perVariant = new Map<string, { productId: string; label: string; wanted: number }>();
+  const nameFor = new Map<string, string>();
+
+  for (const line of lines) {
+    nameFor.set(line.productId, line.name);
+    perProduct.set(line.productId, (perProduct.get(line.productId) ?? 0) + line.quantity);
+    if (line.variantLabel) {
+      const key = variantKey(line.productId, line.variantLabel);
+      const seen = perVariant.get(key);
+      perVariant.set(key, {
+        productId: line.productId,
+        label: line.variantLabel,
+        wanted: (seen?.wanted ?? 0) + line.quantity,
+      });
+    }
+  }
+
+  const productIds = [...perProduct.keys()];
+  if (productIds.length === 0) return;
+
+  const inventory = await prisma.inventoryItem.findMany({
+    where: { productId: { in: productIds } },
+    select: { productId: true, stock: true },
+  });
+  const stockByProduct = new Map(inventory.map((i) => [i.productId, i.stock]));
+
+  for (const [productId, wanted] of perProduct) {
+    if ((stockByProduct.get(productId) ?? 0) < wanted) {
+      throw new Error(`"${nameFor.get(productId)}" is out of stock. Please update your cart.`);
+    }
+  }
+
+  if (perVariant.size === 0) return;
+
+  const variants = await prisma.productVariant.findMany({
+    where: { productId: { in: productIds } },
+    select: { productId: true, label: true, stock: true },
+  });
+  const stockByVariant = new Map(
+    variants.map((v) => [variantKey(v.productId, v.label), v.stock]),
+  );
+
+  for (const [key, { productId, label, wanted }] of perVariant) {
+    const available = stockByVariant.get(key);
+    if (available !== undefined && available < wanted) {
+      throw new Error(
+        `"${nameFor.get(productId)}" (${label}) is out of stock. Please update your cart.`,
+      );
+    }
+  }
+}
+
 export type StartCheckoutResult = {
   orderId: string;
   razorpayOrderId: string;
@@ -78,15 +156,14 @@ export async function startCheckout(
   }
 
   // Don't take money for stock we don't have.
-  const inventory = await prisma.inventoryItem.findMany({
-    where: { productId: { in: cart.items.map((i) => i.productId) } },
-    select: { productId: true, stock: true },
-  });
-  const stockByProduct = new Map(inventory.map((i) => [i.productId, i.stock]));
-  const short = cart.items.find((i) => (stockByProduct.get(i.productId) ?? 0) < i.quantity);
-  if (short) {
-    throw new Error(`"${short.product.name}" is out of stock. Please update your cart.`);
-  }
+  await assertInStock(
+    cart.items.map((i) => ({
+      productId: i.productId,
+      variantLabel: i.variantLabel || null,
+      quantity: i.quantity,
+      name: i.product.name,
+    })),
+  );
 
   const subtotal = cart.items.reduce((s, i) => s + i.product.priceInr * i.quantity, 0);
   const totals = computeTotals(subtotal, method);
@@ -165,9 +242,29 @@ export async function retryPayment(orderId: string): Promise<StartCheckoutResult
   // widen this guard and the settlement guard independently.
   const order = await prisma.order.findFirst({
     where: { id: orderId, userId, paymentStatus: { in: [...SETTLEABLE_FROM] } },
-    select: { id: true, number: true, totalInr: true },
+    select: {
+      id: true,
+      number: true,
+      totalInr: true,
+      items: { select: { productId: true, variantLabel: true, quantity: true, name: true } },
+    },
   });
   if (!order) throw new Error("Order not found");
+
+  // The order was stock-checked when it was created, but a retry can come
+  // minutes or hours later and the stock may be gone. Re-check against the
+  // ORDER's lines (not the cart, which may have changed) before re-opening
+  // payment, so we don't take money a second time for something unshippable.
+  await assertInStock(
+    order.items
+      .filter((i): i is typeof i & { productId: string } => Boolean(i.productId))
+      .map((i) => ({
+        productId: i.productId,
+        variantLabel: i.variantLabel,
+        quantity: i.quantity,
+        name: i.name,
+      })),
+  );
 
   return openGatewayOrder(order.id, order.number, order.totalInr);
 }

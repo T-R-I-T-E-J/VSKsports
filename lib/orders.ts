@@ -64,7 +64,7 @@ export async function settleOrderPaid(
         // Ordered by productId so concurrent settlements take row locks in the
         // same sequence — otherwise two orders sharing products can deadlock.
         items: {
-          select: { productId: true, variantLabel: true, quantity: true },
+          select: { productId: true, variantLabel: true, quantity: true, name: true },
           orderBy: { productId: "asc" },
         },
       },
@@ -74,23 +74,65 @@ export async function settleOrderPaid(
     // PAID with none of the side effects applied.
     if (!order) throw new Error(`settleOrderPaid: order ${orderId} vanished mid-transaction`);
 
+    // Stock movements that could not be made in full. The payment is already
+    // captured by the time we get here, so refusing to settle would strand a
+    // paid order — record the shortfall instead and let fulfilment resolve it.
+    const shortfalls: string[] = [];
+
     for (const item of order.items) {
       if (!item.productId) continue; // deleted product — nothing to decrement
-      await tx.inventoryItem.updateMany({
-        where: { productId: item.productId },
+
+      // `stock: { gte }` makes the decrement conditional: matching zero rows
+      // means there was not enough (or no inventory row at all) rather than
+      // silently driving stock negative, which the bare decrement used to do.
+      const moved = await tx.inventoryItem.updateMany({
+        where: { productId: item.productId, stock: { gte: item.quantity } },
         data: { stock: { decrement: item.quantity } },
       });
+      if (moved.count === 0) {
+        shortfalls.push(`${item.name} x${item.quantity}`);
+        // Take whatever remains rather than leaving it to be sold again.
+        await tx.inventoryItem.updateMany({
+          where: { productId: item.productId },
+          data: { stock: 0 },
+        });
+      }
+
       if (item.variantLabel) {
-        await tx.productVariant.updateMany({
-          where: { productId: item.productId, label: item.variantLabel },
+        const movedVariant = await tx.productVariant.updateMany({
+          where: {
+            productId: item.productId,
+            label: item.variantLabel,
+            stock: { gte: item.quantity },
+          },
           data: { stock: { decrement: item.quantity } },
         });
+        if (movedVariant.count === 0) {
+          shortfalls.push(`${item.name} (${item.variantLabel}) x${item.quantity}`);
+          await tx.productVariant.updateMany({
+            where: { productId: item.productId, label: item.variantLabel },
+            data: { stock: 0 },
+          });
+        }
       }
     }
 
     await tx.orderEvent.create({
-      data: { orderId, status: "PROCESSING", note: "Payment received" },
+      data: {
+        orderId,
+        status: "PROCESSING",
+        note: shortfalls.length
+          ? `Payment received — STOCK SHORTFALL, needs manual fulfilment: ${shortfalls.join("; ")}`.slice(
+              0,
+              300,
+            )
+          : "Payment received",
+      },
     });
+
+    if (shortfalls.length) {
+      console.error("[orders] oversold on order %s: %s", orderId, shortfalls.join("; "));
+    }
 
     // Clear the cart. The webhook has no cookie, so this goes through the
     // user binding that `startCheckout` writes rather than the cart token.
