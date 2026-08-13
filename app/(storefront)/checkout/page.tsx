@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getCart } from "@/lib/cart";
-import { isRazorpayConfigured } from "@/lib/razorpay";
 import { CheckoutFlow } from "@/components/commerce/CheckoutFlow";
 
 export const metadata = { title: "Checkout" };
@@ -56,7 +55,6 @@ export default async function CheckoutPage() {
             }))}
             items={mini}
             subtotalInr={subtotalInr}
-            razorpayEnabled={isRazorpayConfigured}
             user={{ name: session.user.name ?? "", email: session.user.email ?? "" }}
           />
         </div>
