@@ -3,15 +3,41 @@ import { prisma } from "@/lib/db";
 import { sendOrderConfirmationEmail } from "@/lib/email/mailer";
 
 /**
+ * The statuses a payment may still move OUT of.
+ *
+ * Deliberately NOT `{ not: "PAID" }`: `PaymentStatus` also contains REFUNDED,
+ * so `not: "PAID"` matches refunded orders. A replayed `payment.captured` —
+ * Razorpay's own retry queue, or an operator re-firing the event from the
+ * dashboard — would flip a refunded order back to PAID, decrement stock a
+ * second time and re-count it in revenue. Naming the two statuses we accept
+ * keeps a new enum member from silently widening the guard again.
+ */
+export const SETTLEABLE_FROM = ["PENDING", "FAILED"] as const;
+
+/**
+ * The stock loop issues up to two statements per line item, so a large order can
+ * outrun Prisma's 5s default. A settlement that times out rolls back cleanly and
+ * is re-driven by the webhook retry, but it is cheaper to finish the first time.
+ */
+const SETTLE_TX = { timeout: 20_000, maxWait: 10_000 };
+
+/**
  * Settle an order as PAID — exactly once.
  *
  * Two independent callers race to settle every order: the browser's
  * `confirmRazorpayPayment` (fast, but the tab can be closed) and the Razorpay
  * webhook (authoritative, but may arrive first or twice). Everything here is
  * side-effecting and must NOT run twice, so the status write itself is the
- * lock: `updateMany` with `paymentStatus: { not: "PAID" }` is a single atomic
+ * lock: `updateMany` filtered on `SETTLEABLE_FROM` is a single atomic
  * statement, and only the caller whose update actually matched a row
  * (`count === 1`) goes on to move stock.
+ *
+ * The lock and the side effects share ONE transaction, which is what makes the
+ * guarantee exactly-once rather than at-most-once. Held apart, a failure after
+ * the status write would leave the order PAID with stock never decremented and
+ * the cart never cleared — and the webhook retry would then match zero rows and
+ * decline to repair it, permanently. Rolling back releases the lock, so the
+ * retry genuinely re-settles.
  *
  * Returns true when THIS call was the one that settled the order.
  */
@@ -19,27 +45,35 @@ export async function settleOrderPaid(
   orderId: string,
   paymentId: string | null,
 ): Promise<boolean> {
-  const settled = await prisma.order.updateMany({
-    where: { id: orderId, paymentStatus: { not: "PAID" } },
-    data: {
-      paymentStatus: "PAID",
-      status: "PROCESSING",
-      razorpayPaymentId: paymentId,
-      failureReason: null, // a retry that succeeds clears the earlier failure
-    },
-  });
-  if (settled.count === 0) return false; // already settled by the other path
+  const settled = await prisma.$transaction(async (tx) => {
+    const lock = await tx.order.updateMany({
+      where: { id: orderId, paymentStatus: { in: [...SETTLEABLE_FROM] } },
+      data: {
+        paymentStatus: "PAID",
+        status: "PROCESSING",
+        razorpayPaymentId: paymentId,
+        failureReason: null, // a retry that succeeds clears the earlier failure
+      },
+    });
+    if (lock.count === 0) return false; // already settled, or refunded — not ours
 
-  const order = await prisma.order.findUnique({
-    where: { id: orderId },
-    select: {
-      userId: true,
-      items: { select: { productId: true, variantLabel: true, quantity: true } },
-    },
-  });
-  if (!order) return false;
+    const order = await tx.order.findUnique({
+      where: { id: orderId },
+      select: {
+        userId: true,
+        // Ordered by productId so concurrent settlements take row locks in the
+        // same sequence — otherwise two orders sharing products can deadlock.
+        items: {
+          select: { productId: true, variantLabel: true, quantity: true },
+          orderBy: { productId: "asc" },
+        },
+      },
+    });
+    // We just updated this row, so it cannot be missing. Throw rather than
+    // return: that rolls the status write back instead of leaving the order
+    // PAID with none of the side effects applied.
+    if (!order) throw new Error(`settleOrderPaid: order ${orderId} vanished mid-transaction`);
 
-  await prisma.$transaction(async (tx) => {
     for (const item of order.items) {
       if (!item.productId) continue; // deleted product — nothing to decrement
       await tx.inventoryItem.updateMany({
@@ -63,7 +97,14 @@ export async function settleOrderPaid(
     if (order.userId) {
       await tx.cartItem.deleteMany({ where: { cart: { userId: order.userId } } });
     }
-  });
+
+    return true;
+  }, SETTLE_TX);
+
+  if (!settled) return false;
+
+  // Everything below is outside the transaction on purpose: it is not
+  // rollback-able, and must not run until the settlement is durably committed.
 
   // Fire-and-forget: never block or fail settlement on email problems.
   // (sendOrderConfirmationEmail is itself idempotent via EmailLog.)
@@ -77,20 +118,27 @@ export async function settleOrderPaid(
 }
 
 /**
- * Record a failed payment attempt. Guarded by `paymentStatus: { not: "PAID" }`
- * so a late `payment.failed` webhook can never downgrade a captured payment —
- * Razorpay can emit a failure for an earlier attempt on an order that has since
- * been paid on retry.
+ * Record a failed payment attempt.
+ *
+ * Guarded on `SETTLEABLE_FROM` so a late `payment.failed` can never downgrade
+ * an order that is already settled — Razorpay emits a failure for an earlier
+ * attempt on an order that has since been paid on retry, and (the reason
+ * `not: "PAID"` was wrong here too) can emit one against an order that was paid
+ * and subsequently refunded. FAILED is included so a second failed attempt is
+ * still recorded; the status write and its audit event share one transaction so
+ * an order can never be left FAILED with no event explaining why.
  */
 export async function markOrderFailed(orderId: string, reason: string): Promise<boolean> {
-  const res = await prisma.order.updateMany({
-    where: { id: orderId, paymentStatus: { not: "PAID" } },
-    data: { paymentStatus: "FAILED", failureReason: reason.slice(0, 300) },
-  });
-  if (res.count === 0) return false;
+  return prisma.$transaction(async (tx) => {
+    const res = await tx.order.updateMany({
+      where: { id: orderId, paymentStatus: { in: [...SETTLEABLE_FROM] } },
+      data: { paymentStatus: "FAILED", failureReason: reason.slice(0, 300) },
+    });
+    if (res.count === 0) return false;
 
-  await prisma.orderEvent.create({
-    data: { orderId, status: "PENDING", note: `Payment failed: ${reason}`.slice(0, 300) },
+    await tx.orderEvent.create({
+      data: { orderId, status: "PENDING", note: `Payment failed: ${reason}`.slice(0, 300) },
+    });
+    return true;
   });
-  return true;
 }

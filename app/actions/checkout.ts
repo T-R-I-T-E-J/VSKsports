@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getCart } from "@/lib/cart";
 import { computeTotals, type ShippingMethod } from "@/lib/pricing";
-import { settleOrderPaid, markOrderFailed } from "@/lib/orders";
+import { settleOrderPaid, markOrderFailed, SETTLEABLE_FROM } from "@/lib/orders";
 import {
   razorpay,
   isRazorpayConfigured,
@@ -159,8 +159,12 @@ export async function retryPayment(orderId: string): Promise<StartCheckoutResult
   if (!userId) throw new Error("Not authenticated");
   if (!isRazorpayConfigured || !razorpay) throw new Error(PAYMENTS_UNCONFIGURED);
 
+  // Only PENDING/FAILED orders may be re-opened. `not: "PAID"` would also match
+  // REFUNDED and let a customer pay again for an order that was already settled
+  // and refunded. Shares the constant so a new PaymentStatus member cannot
+  // widen this guard and the settlement guard independently.
   const order = await prisma.order.findFirst({
-    where: { id: orderId, userId, paymentStatus: { not: "PAID" } },
+    where: { id: orderId, userId, paymentStatus: { in: [...SETTLEABLE_FROM] } },
     select: { id: true, number: true, totalInr: true },
   });
   if (!order) throw new Error("Order not found");
