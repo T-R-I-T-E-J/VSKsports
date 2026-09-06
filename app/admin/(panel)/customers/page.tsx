@@ -14,6 +14,10 @@ export default async function AdminCustomers({ searchParams }: { searchParams: P
   const q = one(sp.q).trim();
   const seg = one(sp.type) || "all";
   const page = Math.max(1, parseInt(one(sp.page) || "1", 10) || 1);
+  // Async Server Component: this renders once per request on the server, so
+  // reading the clock is correct here and carries none of the re-render hazards
+  // the purity rule guards against.
+  // eslint-disable-next-line react-hooks/purity -- server-rendered once per request
   const since30 = new Date(Date.now() - 30 * 86400_000);
 
   const where: Prisma.UserWhereInput = { role: { in: ["CUSTOMER", "DEALER"] } };

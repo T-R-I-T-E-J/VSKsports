@@ -14,6 +14,10 @@ export const metadata = { title: "Dashboard — VSK Admin" };
 const CAT_COLORS = ["#1B43C8", "#2E5BE6", "#E11D2B", "#C8961E", "#1FA855", "#7C3AED"];
 
 export default async function AdminDashboard() {
+  // Async Server Component: this renders once per request on the server, so
+  // reading the clock is correct here and carries none of the re-render hazards
+  // the purity rule guards against.
+  // eslint-disable-next-line react-hooks/purity -- server-rendered once per request
   const since30 = new Date(Date.now() - 30 * 86400_000);
   const since12mo = new Date();
   since12mo.setMonth(since12mo.getMonth() - 11);

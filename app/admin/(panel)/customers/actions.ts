@@ -36,12 +36,29 @@ export async function updateCustomer(fd: FormData) {
   // loyalty point adjustment with reward ledger entry
   const delta = toInt(fd.get("pointsDelta"), 0);
   if (delta !== 0) {
+    // A negative adjustment larger than the balance would drive points below
+    // zero. That is now rejected by a CHECK constraint, so clamp the deduction
+    // to the balance and record what was actually applied — the ledger must
+    // agree with the balance, and a staff typo should not throw a 500.
+    let applied = delta;
+    if (delta < 0) {
+      const current = await prisma.user.findUnique({
+        where: { id },
+        select: { loyaltyPoints: true },
+      });
+      applied = Math.max(delta, -(current?.loyaltyPoints ?? 0));
+    }
+    if (applied === 0) {
+      revalidatePath(`/admin/customers/${id}`);
+      redirect(`/admin/customers/${id}?saved=1`);
+    }
+    const deltaApplied = applied;
     await prisma.$transaction([
-      prisma.user.update({ where: { id }, data: { loyaltyPoints: { increment: delta } } }),
+      prisma.user.update({ where: { id }, data: { loyaltyPoints: { increment: deltaApplied } } }),
       prisma.rewardLedger.create({
         data: {
           userId: id,
-          points: delta,
+          points: deltaApplied,
           reason: strOrNull(fd.get("pointsReason")) ?? "Manual adjustment by staff",
         },
       }),
@@ -51,7 +68,9 @@ export async function updateCustomer(fd: FormData) {
       "LOYALTY_ADJUSTED",
       "User",
       id,
-      `${delta > 0 ? "+" : ""}${delta} pts`,
+      deltaApplied === delta
+        ? `${delta > 0 ? "+" : ""}${delta} pts`
+        : `${delta} pts requested, ${deltaApplied} applied (clamped at zero balance)`,
     );
   }
 

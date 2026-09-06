@@ -12,6 +12,9 @@ import { computeTotals } from "@/lib/pricing";
 import { formatINR } from "@/lib/format";
 import { sendOrderConfirmationEmail } from "@/lib/email/mailer";
 
+/** Thrown inside the credit transaction to roll it back; caught and returned as a result. */
+class CreditLimitExceeded extends Error {}
+
 export type BulkLine = { productId: string; quantity: number };
 
 export type BulkOrderResult =
@@ -58,47 +61,68 @@ export async function placeBulkOrder(lines: BulkLine[]): Promise<BulkOrderResult
   );
   const totals = computeTotals(subtotal, "standard");
 
-  // Credit-limit check: open (PENDING/PROCESSING) order total + this order.
-  const profile = await prisma.dealerProfile.findUnique({ where: { userId } });
-  if (profile?.creditLimitInr != null) {
-    const agg = await prisma.order.aggregate({
-      where: { userId, status: { in: ["PENDING", "PROCESSING"] } },
-      _sum: { totalInr: true },
-    });
-    const creditUsed = agg._sum.totalInr ?? 0;
-    if (creditUsed + totals.totalInr > profile.creditLimitInr) {
-      const available = Math.max(0, profile.creditLimitInr - creditUsed);
-      return {
-        ok: false,
-        error: `Credit limit exceeded — this order (${formatINR(totals.totalInr)}) is more than your available credit of ${formatINR(available)} (limit ${formatINR(profile.creditLimitInr)}).`,
-      };
-    }
-  }
-
   const number = await uniqueB2BNumber();
-  const order = await prisma.order.create({
-    data: {
-      number,
-      userId,
-      status: "PENDING",
-      paymentStatus: "PENDING",
-      subtotalInr: totals.subtotalInr,
-      gstInr: totals.gstInr,
-      shippingInr: totals.shippingInr,
-      totalInr: totals.totalInr,
-      items: {
-        create: clean.map((l) => {
-          const pdt = byId.get(l.productId)!;
-          return {
-            productId: pdt.id,
-            name: pdt.name,
-            unitPriceInr: pdt.dealerPriceInr as number,
-            quantity: l.quantity,
-          };
-        }),
-      },
-    },
-  });
+
+  // CONCURRENCY: the credit check and the order write share ONE transaction,
+  // and the dealer's profile row is locked FOR UPDATE first. Previously the
+  // aggregate and the create were separate unsynchronised statements, so
+  // parallel bulk orders each measured against the same stale `creditUsed` and
+  // every one of them passed — letting a dealer draw arbitrarily far past an
+  // approved limit on goods that ship without payment. Locking the profile row
+  // serialises credit checks per dealer; dealers without a limit take no lock
+  // because there is no limit to race against.
+  let order: { id: string; number: string; totalInr: number };
+  try {
+    order = await prisma.$transaction(async (tx) => {
+      const locked = await tx.$queryRaw<{ creditLimitInr: number | null }[]>`
+        SELECT "creditLimitInr" FROM "DealerProfile" WHERE "userId" = ${userId} FOR UPDATE
+      `;
+      const creditLimitInr = locked[0]?.creditLimitInr ?? null;
+
+      if (creditLimitInr != null) {
+        const agg = await tx.order.aggregate({
+          where: { userId, status: { in: ["PENDING", "PROCESSING"] } },
+          _sum: { totalInr: true },
+        });
+        const creditUsed = agg._sum.totalInr ?? 0;
+        if (creditUsed + totals.totalInr > creditLimitInr) {
+          const available = Math.max(0, creditLimitInr - creditUsed);
+          throw new CreditLimitExceeded(
+            `Credit limit exceeded — this order (${formatINR(totals.totalInr)}) is more than your available credit of ${formatINR(available)} (limit ${formatINR(creditLimitInr)}).`,
+          );
+        }
+      }
+
+      return tx.order.create({
+        data: {
+          number,
+          userId,
+          status: "PENDING",
+          paymentStatus: "PENDING",
+          subtotalInr: totals.subtotalInr,
+          gstInr: totals.gstInr,
+          shippingInr: totals.shippingInr,
+          totalInr: totals.totalInr,
+          items: {
+            create: clean.map((l) => {
+              const pdt = byId.get(l.productId)!;
+              return {
+                productId: pdt.id,
+                name: pdt.name,
+                unitPriceInr: pdt.dealerPriceInr as number,
+                quantity: l.quantity,
+              };
+            }),
+          },
+        },
+        select: { id: true, number: true, totalInr: true },
+      });
+    });
+  } catch (e) {
+    // Rejection is a normal outcome, not a fault — surface it as a result.
+    if (e instanceof CreditLimitExceeded) return { ok: false, error: e.message };
+    throw e;
+  }
 
   // Dealer orders skip Razorpay — send the order confirmation directly.
   // sendOrderConfirmationEmail never throws; an email problem can't fail the order.

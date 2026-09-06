@@ -82,11 +82,19 @@ export function Bars({ rows }: { rows: [string, number, string][] }) {
 }
 
 export function Donut({ segs }: { segs: [string, number, string][] }) {
-  let off = 0;
+  // Cumulative offset per segment, computed BEFORE render rather than
+  // accumulated inside map(). Mutating a variable while rendering is not safe
+  // under concurrent React — a re-entrant render would resume mid-sequence and
+  // mis-place every remaining arc.
+  const offsets = segs.reduce<number[]>(
+    (acc, _seg, i) => [...acc, i === 0 ? 0 : acc[i - 1]! + segs[i - 1]![1]],
+    [],
+  );
   return (
     <div className="donut-wrap">
       <svg width="150" height="150" viewBox="0 0 42 42">
-        {segs.map(([n, v, c]) => {
+        {segs.map(([n, v, c], i) => {
+          const off = offsets[i]!;
           const el = (
             <circle
               key={n}
@@ -100,7 +108,6 @@ export function Donut({ segs }: { segs: [string, number, string][] }) {
               strokeDashoffset={25 - off}
             />
           );
-          off += v;
           return el;
         })}
       </svg>

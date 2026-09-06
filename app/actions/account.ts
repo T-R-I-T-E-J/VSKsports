@@ -79,13 +79,39 @@ export async function updateProfile(formData: FormData): Promise<void> {
 
 export async function updateCommunicationPrefs(formData: FormData): Promise<void> {
   const userId = await requireUserId();
-  const marketingOptIn = formData.get("marketing") === "on";
+  // Every switch on the form is persisted. Previously only `marketing` was read,
+  // so the other three were silently discarded while the page still reported
+  // "Preferences saved" — a customer opting out of WhatsApp kept receiving it.
+  // An unchecked checkbox is simply absent from FormData, so `=== "on"` is the
+  // correct read for each.
   await prisma.user.update({
     where: { id: userId },
-    data: { marketingOptIn },
+    data: {
+      marketingOptIn: formData.get("marketing") === "on",
+      eventInvitesOptIn: formData.get("eventInvites") === "on",
+      trainingRemindersOptIn: formData.get("trainingReminders") === "on",
+      whatsappOptIn: formData.get("whatsapp") === "on",
+    },
   });
   revalidatePath("/profile");
   redirect("/profile?saved=comms&s=comms");
+}
+
+/**
+ * Privacy tab preferences.
+ *
+ * Separate from `updateCommunicationPrefs` on purpose: an unchecked checkbox is
+ * absent from FormData, so a shared action would read the other form's switches
+ * as "off" and silently clear them.
+ */
+export async function updatePrivacyPrefs(formData: FormData): Promise<void> {
+  const userId = await requireUserId();
+  await prisma.user.update({
+    where: { id: userId },
+    data: { personalisedRecsOptIn: formData.get("personalisedRecs") === "on" },
+  });
+  revalidatePath("/profile");
+  redirect("/profile?saved=privacy&s=privacy");
 }
 
 export async function changePassword(formData: FormData): Promise<void> {

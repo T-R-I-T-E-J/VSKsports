@@ -143,18 +143,6 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
                 ))}
               </div>
 
-              <div className="fgroup">
-                <h4>Price</h4>
-                <div className="priceslider">
-                  <span className="knob" style={{ left: "18%" }} />
-                  <span className="knob" style={{ left: "76%" }} />
-                </div>
-                <div className="pricerow">
-                  <input defaultValue="₹6,500" />
-                  <span style={{ color: "var(--mute)" }}>—</span>
-                  <input defaultValue="₹2,40,000" />
-                </div>
-              </div>
 
               {calibres.length > 0 && (
                 <div className="fgroup">

@@ -89,10 +89,6 @@ export default async function CartPage() {
                   </b>
                 </div>
                 <div className="sumline"><span>{GST_LABEL}</span><b>{formatINR(totals.gstInr)}</b></div>
-                <div className="promo">
-                  <input placeholder="Promo code" />
-                  <button className="btn btn--ghost btn--sm">Apply</button>
-                </div>
                 <div className="sumtotal"><span>Total</span><b>{formatINR(totals.totalInr)}</b></div>
                 <p className="mono-tag" style={{ margin: "8px 0 18px" }}>
                   Inclusive of all taxes · GST invoice provided

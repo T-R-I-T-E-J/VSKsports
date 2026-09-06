@@ -28,6 +28,18 @@ export async function addToCart(
   const qty = validQty(quantity);
   if (qty === null) return;
 
+  // SECURITY: `toggleProductActive` is the only way staff withdraw a product
+  // from sale — there is no delete — so isActive is the withdrawal switch. It
+  // was never checked here, which meant a product pulled for a recall, a
+  // supplier dispute or a compliance reason could still be added and bought by
+  // calling this action with its id. The dealer bulk-order path already filters
+  // on isActive; this brings the retail path in line.
+  const sellable = await prisma.product.findFirst({
+    where: { id: productId, isActive: true },
+    select: { id: true },
+  });
+  if (!sellable) return;
+
   const cart = await getOrCreateCart();
   const v = variantLabel ?? "";
   const existing = await prisma.cartItem.findFirst({

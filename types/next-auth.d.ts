@@ -11,6 +11,8 @@ declare module "next-auth" {
       id: string;
       role?: string;
     } & DefaultSession["user"];
+    /** JWT `iat` in seconds, surfaced so session revocation can compare it. */
+    issuedAt?: number;
   }
 }
 

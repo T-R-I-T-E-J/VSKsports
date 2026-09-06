@@ -11,6 +11,9 @@ export function CookieBanner() {
 
   useEffect(() => {
     try {
+      // localStorage is unavailable during SSR, so the banner's visibility can
+      // only be resolved after mount. Runs once and settles; does not cascade.
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- client-only read
       if (!localStorage.getItem(KEY)) setShow(true);
     } catch {
       /* localStorage unavailable */

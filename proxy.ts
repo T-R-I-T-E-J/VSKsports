@@ -28,8 +28,21 @@ const PROTECTED_PREFIXES = [
   "/profile",
 ];
 
+/**
+ * Prefix match on a PATH SEGMENT boundary.
+ *
+ * A bare `startsWith("/dealer")` also matches `/dealers` — the public dealer
+ * locator, which carries the "Become a Dealer" application form and is listed
+ * in the sitemap and the main nav. Anonymous visitors were being redirected to
+ * /login from it, so prospective dealers could not apply and crawlers saw a
+ * redirect. Matching the segment boundary keeps `/dealer` and `/dealer/...`
+ * gated while leaving `/dealers` public.
+ */
+const underPrefix = (pathname: string, prefix: string) =>
+  pathname === prefix || pathname.startsWith(`${prefix}/`);
+
 const isProtected = (pathname: string) =>
-  PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+  PROTECTED_PREFIXES.some((p) => underPrefix(pathname, p));
 
 /**
  * Per-request CSP. `'strict-dynamic'` means the nonce is what grants trust:
@@ -70,9 +83,9 @@ export default auth((req) => {
   const publicAuthPage = pathname === "/login" || pathname === "/admin/login";
 
   if (!publicAuthPage) {
-    if (pathname.startsWith("/admin")) {
+    if (underPrefix(pathname, "/admin")) {
       if (!isStaff) return NextResponse.redirect(new URL("/admin/login", req.nextUrl));
-    } else if (pathname.startsWith("/dealer")) {
+    } else if (underPrefix(pathname, "/dealer")) {
       if (!loggedIn) return NextResponse.redirect(new URL("/login", req.nextUrl));
       if (role !== "DEALER" && !isStaff) return NextResponse.redirect(new URL("/", req.nextUrl));
     } else if (isProtected(pathname) && !loggedIn) {

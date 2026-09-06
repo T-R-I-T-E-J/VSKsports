@@ -6,6 +6,8 @@
 
 import nodemailer, { type Transporter } from "nodemailer";
 import { prisma } from "@/lib/db";
+import { isProduction } from "@/lib/config";
+import { alertOps } from "@/lib/alerts";
 import type { EmailType } from "@prisma/client";
 import {
   orderConfirmation,
@@ -91,8 +93,22 @@ const smtpTransport: EmailTransport = {
   },
 };
 
+/**
+ * SECURITY / CORRECTNESS: the console transport must never be reachable in
+ * production. It always "succeeds", so `sendEmail` recorded EmailStatus.SENT
+ * for mail that was never dispatched — password resets dead-ended while the
+ * EmailLog table insisted delivery had happened. Throwing here routes an
+ * unconfigured production through the existing catch, which records FAILED and
+ * raises an alert, so the failure is visible instead of silent.
+ */
 function pickTransport(): EmailTransport {
-  return process.env.SMTP_HOST ? smtpTransport : consoleTransport;
+  if (process.env.SMTP_HOST) return smtpTransport;
+  if (isProduction) {
+    throw new Error(
+      "Email is not configured: SMTP_HOST is required in production. Refusing to discard mail to the console.",
+    );
+  }
+  return consoleTransport;
 }
 
 /**
@@ -107,6 +123,15 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
     delivered = true;
   } catch (err) {
     console.error("[mailer] transport failed:", err);
+    // Undelivered transactional mail is a customer-visible failure (a reset
+    // link that never arrives locks the account out), so it alerts rather than
+    // only logging.
+    alertOps("email.delivery_failed", {
+      to: input.to,
+      type: input.type,
+      orderId: input.orderId ?? null,
+      reason: err instanceof Error ? err.message : String(err),
+    });
   }
   try {
     const log = await prisma.emailLog.create({

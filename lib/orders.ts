@@ -1,6 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { sendOrderConfirmationEmail } from "@/lib/email/mailer";
+import { alertOps } from "@/lib/alerts";
 
 /**
  * The statuses a payment may still move OUT of.
@@ -132,6 +133,9 @@ export async function settleOrderPaid(
 
     if (shortfalls.length) {
       console.error("[orders] oversold on order %s: %s", orderId, shortfalls.join("; "));
+      // The payment is already captured and the order needs manual fulfilment,
+      // so this must reach a human rather than sit in a log nobody reads.
+      alertOps("order.oversold", { orderId, shortfalls });
     }
 
     // Clear the cart. The webhook has no cookie, so this goes through the

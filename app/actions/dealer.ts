@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 
 const str = (v: FormDataEntryValue | null): string => String(v ?? "").trim();
 const strOrNull = (v: FormDataEntryValue | null): string | null => {
@@ -30,6 +31,18 @@ export async function submitDealerApplication(fd: FormData): Promise<void> {
 
   if (!business || !contactName || !email) {
     redirect("/dealers?error=missing#apply");
+  }
+
+  // This action is reachable without a session and writes a row plus attached
+  // documents, so it is throttled per source. Applying to become a dealer is a
+  // once-in-a-business-lifetime act; a low ceiling costs nobody anything.
+  const limited = await rateLimit(
+    user?.id ? `dealer-app:user:${user.id}` : `dealer-app:ip:${await clientIp()}`,
+    5,
+    24 * 60 * 60 * 1000,
+  );
+  if (!limited.ok) {
+    redirect("/dealers?error=ratelimit#apply");
   }
 
   // docIds are File ids produced by the DealerDocUploader (DEALER_DOC kind).

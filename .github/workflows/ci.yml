@@ -1,0 +1,91 @@
+name: CI
+
+# Nothing verified a commit before this existed: tests, typecheck and lint ran
+# only when someone remembered, and lint was failing. Untriggered tests protect
+# nothing, so this gate is what makes the rest of the test suite meaningful.
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    services:
+      # A disposable Postgres. These are database-semantics tests — conditional
+      # updates, transaction isolation, CHECK constraints — and a mock would pass
+      # while the real thing raced.
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: vsk
+          POSTGRES_PASSWORD: vsk
+          POSTGRES_DB: vsk_sports
+        ports:
+          - 5544:5432
+        options: >-
+          --health-cmd "pg_isready -U vsk -d vsk_sports"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://vsk:vsk@127.0.0.1:5544/vsk_sports?schema=public
+      DIRECT_URL: postgresql://vsk:vsk@127.0.0.1:5544/vsk_sports?schema=public
+      # Not a real secret — only needs to be present for the build to resolve.
+      AUTH_SECRET: ci-placeholder-secret
+      NEXTAUTH_URL: http://localhost:3000
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      # Proves the whole migration history applies to an empty database. This
+      # was the one claim the audit could not verify without a scratch DB.
+      - name: Migrate from zero
+        run: npx prisma migrate deploy
+
+      - name: Assert no schema drift
+        run: |
+          DIFF=$(npx prisma migrate diff \
+            --from-schema-datasource prisma/schema.prisma \
+            --to-schema-datamodel prisma/schema.prisma --script)
+          echo "$DIFF"
+          if ! echo "$DIFF" | grep -q "empty migration"; then
+            echo "::error::Schema drift detected between migrations and schema.prisma"
+            exit 1
+          fi
+
+      # Regression guard for the audit's G-1: Postgres does not index foreign
+      # keys automatically and Prisma does not add them, so 42 hot-path columns
+      # were sequential scans. This fails if a new relation is added without one.
+      - name: Assert every foreign key is indexed
+        run: node scripts/check-fk-indexes.mjs
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npx eslint .
+
+      - name: Test
+        run: npx vitest run
+
+      - name: Build
+        run: npx next build

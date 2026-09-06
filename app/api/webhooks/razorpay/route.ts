@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { verifyWebhookSignature, razorpay } from "@/lib/razorpay";
 import { prisma } from "@/lib/db";
 import { settleOrderPaid, markOrderFailed } from "@/lib/orders";
+import { alertOps } from "@/lib/alerts";
 
 // HMAC verification and Prisma both need Node built-ins — never the edge runtime.
 export const runtime = "nodejs";
@@ -133,6 +134,7 @@ export async function POST(req: NextRequest) {
     // Money may have moved with no matching record, so fail loudly and let
     // Razorpay redeliver rather than dropping the event silently.
     console.error("[razorpay] unresolvable order for %s (%s)", razorpayOrderId, event.event);
+    alertOps("payment.unresolvable_order", { razorpayOrderId, event: event.event });
     return NextResponse.json({ ok: false, error: "unresolved" }, { status: 500 });
   }
 
@@ -154,6 +156,15 @@ export async function POST(req: NextRequest) {
           paid,
           expected,
         );
+        // Money has been captured at the gateway and the order stays PENDING.
+        // Answering 200 stops Razorpay retrying, so without an alert this is a
+        // paying customer with nothing to show for it and nobody informed.
+        alertOps("payment.amount_mismatch", {
+          orderId: order.id,
+          capturedPaise: paid,
+          expectedPaise: expected,
+          razorpayOrderId,
+        });
         return NextResponse.json({ ok: false, error: "amount mismatch" }, { status: 200 });
       }
 
@@ -169,6 +180,15 @@ export async function POST(req: NextRequest) {
           razorpayOrderId,
           event.payload?.payment?.entity?.id ?? "n/a",
         );
+        // Usually the browser simply won the race, but this is also the only
+        // signal that a customer paid a superseded gateway order AND the retry,
+        // i.e. was charged twice. Needs a human to compare and refund.
+        alertOps("payment.possible_double_charge", {
+          orderId: order.id,
+          event: event.event,
+          razorpayOrderId,
+          paymentId: event.payload?.payment?.entity?.id ?? null,
+        });
       }
     } else if (event.event === "payment.failed") {
       await markOrderFailed(
@@ -178,6 +198,11 @@ export async function POST(req: NextRequest) {
     }
   } catch (err) {
     console.error("[razorpay] %s failed for order %s:", event.event, order.id, err);
+    alertOps("payment.settlement_failed", {
+      orderId: order.id,
+      event: event.event,
+      reason: err instanceof Error ? err.message : String(err),
+    });
     return NextResponse.json({ ok: false, error: "settlement failed" }, { status: 500 });
   }
 

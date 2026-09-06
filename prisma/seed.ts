@@ -14,8 +14,15 @@ import data from "./seed-data.json";
 import { GST_RATE } from "../lib/pricing";
 
 const prisma = new PrismaClient();
+// Rows come from a prototype JSON export whose tables have genuinely different
+// shapes — some call sites destructure a row as a tuple, others read named
+// properties off it. Narrowing to `unknown` forces a cast at every one of ~40
+// call sites for no safety gain in a seed script, so `any` is deliberate and
+// scoped to these two lines.
+/* eslint-disable @typescript-eslint/no-explicit-any */
 const DB = data as unknown as Record<string, any[]>;
 const get = (k: string): any[] => (Array.isArray(DB[k]) ? DB[k] : []);
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 const parsePrice = (s?: string | null): number => {
   if (!s) return 0;

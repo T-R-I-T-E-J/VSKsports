@@ -118,10 +118,6 @@ export default async function DealersPage({
           </div>
           <div className="stack-sm" style={{ display: "grid", gridTemplateColumns: "340px 1fr", gap: 24, alignItems: "start" }}>
             <div>
-              <div className="field" style={{ marginBottom: 16 }}>
-                <label>Search by city or PIN</label>
-                <input placeholder="e.g. Mumbai or 400001" />
-              </div>
               <div style={{ display: "grid", gap: 12 }}>
                 {dealers.map((d) => (
                   <div className="cc" style={{ background: "#fff" }} key={d.id}>

@@ -11,6 +11,7 @@ import {
   verifyPaymentSignature,
   RAZORPAY_KEY_ID,
 } from "@/lib/razorpay";
+import { rateLimit, retryAfterLabel } from "@/lib/rate-limit";
 
 async function uniqueOrderNumber(): Promise<string> {
   const year = new Date().getFullYear();
@@ -38,6 +39,29 @@ function parseShipping(value: unknown): ShippingMethod | null {
 
 const PAYMENTS_UNCONFIGURED =
   "Online payments are not configured. Please contact support.";
+
+/**
+ * Gateway-order creation is rate limited per user. Every call to
+ * `startCheckout`/`retryPayment` creates a real Razorpay order, so an
+ * unthrottled loop burns gateway quota and fills the orders table with PENDING
+ * rows. Generous enough that a customer retrying a failed card is never
+ * inconvenienced.
+ */
+const CHECKOUT_WINDOW_MS = 10 * 60 * 1000;
+const CHECKOUT_MAX_PER_USER = 12;
+
+async function assertCheckoutRate(userId: string): Promise<void> {
+  const limited = await rateLimit(
+    `checkout:user:${userId}`,
+    CHECKOUT_MAX_PER_USER,
+    CHECKOUT_WINDOW_MS,
+  );
+  if (!limited.ok) {
+    throw new Error(
+      `Too many payment attempts. Please try again in ${retryAfterLabel(limited.retryAfterSec)}.`,
+    );
+  }
+}
 
 type StockLine = {
   productId: string;
@@ -134,6 +158,8 @@ export async function startCheckout(
   const userId = session?.user?.id;
   if (!userId) throw new Error("Not authenticated");
 
+  await assertCheckoutRate(userId);
+
   const method = parseShipping(shipping);
   if (!method) throw new Error("Please choose a valid delivery method");
 
@@ -153,6 +179,16 @@ export async function startCheckout(
   // subtract from the subtotal and dial the charged amount down.
   if (cart.items.some((i) => !Number.isInteger(i.quantity) || i.quantity < 1)) {
     throw new Error("Your cart contains an invalid quantity. Please review it and try again.");
+  }
+
+  // A cart can predate a withdrawal by weeks, so `addToCart` refusing inactive
+  // products is not enough on its own — re-check on the money path. Naming the
+  // product tells the customer which line to remove instead of failing opaquely.
+  const withdrawn = cart.items.find((i) => !i.product.isActive);
+  if (withdrawn) {
+    throw new Error(
+      `"${withdrawn.product.name}" is no longer available. Please remove it from your cart to continue.`,
+    );
   }
 
   // Don't take money for stock we don't have.
@@ -234,6 +270,7 @@ export async function retryPayment(orderId: string): Promise<StartCheckoutResult
   const session = await auth();
   const userId = session?.user?.id;
   if (!userId) throw new Error("Not authenticated");
+  await assertCheckoutRate(userId);
   if (!isRazorpayConfigured || !razorpay) throw new Error(PAYMENTS_UNCONFIGURED);
 
   // Only PENDING/FAILED orders may be re-opened. `not: "PAID"` would also match

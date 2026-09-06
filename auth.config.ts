@@ -20,6 +20,10 @@ export const authConfig = {
         session.user.id = token.id as string;
         session.user.role = token.role as string | undefined;
       }
+      // Surface the issue time so Node-side guards can reject tokens minted
+      // before a password reset or role change. Reading `iat` needs no database,
+      // so this stays edge-safe.
+      session.issuedAt = typeof token.iat === "number" ? token.iat : undefined;
       return session;
     },
   },

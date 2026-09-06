@@ -1,13 +1,30 @@
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { getValidatedSession } from "@/lib/session";
 
-/** Role gate for every admin server action / page-level data helper. */
+/**
+ * Role gate for every admin server action / page-level data helper.
+ *
+ * The role is re-read from the database rather than trusted from the JWT.
+ * Sessions are stateless, so a token minted while the user was an ADMIN kept
+ * working after a demotion — both the middleware and this guard read the stale
+ * copy. `getValidatedSession` also rejects tokens issued before the account's
+ * session floor, so a password reset genuinely evicts an attacker.
+ */
 export async function requireStaff() {
-  const session = await auth();
-  if (session?.user?.role !== "ADMIN" && session?.user?.role !== "STAFF") {
+  const validated = await getValidatedSession();
+  if (!validated || (validated.role !== "ADMIN" && validated.role !== "STAFF")) {
     throw new Error("Forbidden");
   }
-  return session;
+  // Shape kept compatible with the previous return value so the ~30 call sites
+  // reading `session.user.id` continue to work unchanged.
+  return {
+    user: {
+      id: validated.userId,
+      role: validated.role,
+      email: validated.email,
+      name: validated.name,
+    },
+  };
 }
 
 /** Audit log — every mutating admin action records a StaffAction row. */

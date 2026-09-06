@@ -99,9 +99,21 @@ export async function resetPassword(
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
-  await prisma.user.update({ where: { email: normalized }, data: { passwordHash } });
-  // Single-use: clear all tokens for this account.
-  await prisma.verificationToken.deleteMany({ where: { identifier: normalized } });
+  // SECURITY: bump the session floor in the same statement as the new password.
+  // A reset is usually performed BECAUSE an account was compromised, and with
+  // stateless JWTs the attacker's existing token otherwise stayed valid until it
+  // expired — the reset locked the front door and left them inside.
+  //
+  // The hash write and token cleanup share a transaction so a failure cannot
+  // leave the password changed with the used token still redeemable.
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { email: normalized },
+      data: { passwordHash, sessionsValidFrom: new Date() },
+    }),
+    // Single-use: clear all tokens for this account.
+    prisma.verificationToken.deleteMany({ where: { identifier: normalized } }),
+  ]);
 
   return { ok: true };
 }

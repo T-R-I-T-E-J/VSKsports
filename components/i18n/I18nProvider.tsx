@@ -55,6 +55,9 @@ export function I18nProvider({
   useEffect(() => {
     const match = document.cookie.match(/(?:^|;\s*)NEXT_LOCALE=([^;]+)/);
     const cookieLocale = match?.[1];
+    // document.cookie is unreadable during SSR, so the stored locale can only
+    // be applied after mount. Runs once on mount and settles.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- client-only read
     if (isLocale(cookieLocale)) setLocaleState(cookieLocale);
   }, []);
 

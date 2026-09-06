@@ -40,6 +40,24 @@ export async function createReturn(formData: FormData): Promise<void> {
   const validItems = order.items.filter((i) => itemIds.includes(i.id));
   if (validItems.length === 0) redirect(`/returns?order=${orderId}&error=noitems`);
 
+  // Nothing previously stopped the same items being returned twice, so a double
+  // click produced two live RMAs for one physical item. Refunds are issued by
+  // hand, so a staff member working the approval queue could legitimately refund
+  // both. Items already covered by a return that has not been rejected are
+  // excluded here; a REJECTED return releases its items for a fresh request.
+  const alreadyReturned = await prisma.returnItem.findMany({
+    where: {
+      orderItemId: { in: validItems.map((i) => i.id) },
+      return: { status: { not: "REJECTED" } },
+    },
+    select: { orderItemId: true },
+  });
+  const blocked = new Set(alreadyReturned.map((r) => r.orderItemId));
+  const openItems = validItems.filter((i) => !blocked.has(i.id));
+  if (openItems.length === 0) {
+    redirect(`/returns?order=${orderId}&error=alreadyreturned`);
+  }
+
   const rmaNumber = await uniqueRmaNumber();
   const created = await prisma.return.create({
     data: {
@@ -50,7 +68,7 @@ export async function createReturn(formData: FormData): Promise<void> {
       comment: comment || null,
       status: "REQUESTED",
       items: {
-        create: validItems.map((i) => ({
+        create: openItems.map((i) => ({
           orderItemId: i.id,
           name: i.name,
           quantity: i.quantity,

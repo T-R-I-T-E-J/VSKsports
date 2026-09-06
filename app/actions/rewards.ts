@@ -18,14 +18,20 @@ export async function redeemReward(formData: FormData): Promise<void> {
 
   try {
     await prisma.$transaction(async (tx) => {
-      const user = await tx.user.findUnique({ where: { id: userId } });
-      if (!user || user.loyaltyPoints < reward.pointsCost) {
-        throw new Error("INSUFFICIENT_POINTS");
-      }
-      await tx.user.update({
-        where: { id: userId },
+      // CONCURRENCY: the balance check and the decrement are ONE conditional
+      // statement. Reading the balance and then decrementing let two parallel
+      // redemptions both observe the same pre-decrement total, both pass, and
+      // both spend it — leaving a negative balance and two fulfilment requests
+      // for one payment. `updateMany` filtered on the balance is the same lock
+      // idiom `settleOrderPaid` uses: only the caller whose update matched a row
+      // owns the spend.
+      const spent = await tx.user.updateMany({
+        where: { id: userId, loyaltyPoints: { gte: reward.pointsCost } },
         data: { loyaltyPoints: { decrement: reward.pointsCost } },
       });
+      if (spent.count === 0) {
+        throw new Error("INSUFFICIENT_POINTS");
+      }
       await tx.rewardRedemption.create({
         data: {
           userId,

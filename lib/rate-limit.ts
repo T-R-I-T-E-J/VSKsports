@@ -6,9 +6,16 @@ import { prisma } from "@/lib/db";
  *
  * DB-backed rather than in-memory: Server Actions run as ordinary POST
  * endpoints across many serverless instances, so a per-process Map would let an
- * attacker sidestep the limit simply by spreading requests. The counter row is
- * keyed by a caller-supplied string and expires on its own — the increment is
- * atomic in Postgres, so concurrent requests can't race past the ceiling.
+ * attacker sidestep the limit simply by spreading requests.
+ *
+ * CONCURRENCY: the whole consume operation is ONE statement. An earlier version
+ * read the row, compared the count to the limit, then incremented in a separate
+ * update — three statements with no lock, so parallel requests all read the same
+ * pre-increment value and all passed the check. That defeated the ceiling by
+ * roughly the concurrency factor on the only brute-force protection guarding
+ * sign-in. The upsert below increments and returns the new count in a single
+ * atomic statement, and the limit is compared AFTER incrementing, so exactly
+ * `limit` callers can succeed per window no matter how they are interleaved.
  */
 
 export type RateLimitResult = { ok: true } | { ok: false; retryAfterSec: number };
@@ -21,6 +28,11 @@ export type RateLimitResult = { ok: true } | { ok: false; retryAfterSec: number 
 export async function clientIp(): Promise<string> {
   try {
     const h = await headers();
+    // Prefer the platform-set header: Vercel writes x-vercel-forwarded-for
+    // itself, so unlike x-forwarded-for a client cannot forge it to rotate
+    // through fresh rate-limit buckets.
+    const platform = h.get("x-vercel-forwarded-for");
+    if (platform) return platform.split(",")[0]!.trim();
     const fwd = h.get("x-forwarded-for");
     if (fwd) return fwd.split(",")[0]!.trim();
     return h.get("x-real-ip") ?? "unknown";
@@ -41,29 +53,44 @@ export async function rateLimit(
   limit: number,
   windowMs: number,
 ): Promise<RateLimitResult> {
-  const now = new Date();
+  const windowSecs = windowMs / 1000;
   try {
-    const existing = await prisma.rateLimit.findUnique({ where: { key } });
+    // Insert-or-increment in one statement. The CASE arms restart the window
+    // when the stored one has lapsed, so an expired row is reused rather than
+    // needing a separate delete. RETURNING gives us the post-increment count,
+    // which is the value the limit must be compared against.
+    //
+    // CLOCKS: every timestamp here comes from the database (`NOW()`), never from
+    // the caller. Server Actions run across many serverless instances whose
+    // clocks drift independently, so a window written against one instance's
+    // clock and compared against another's expires early or late. Keeping the
+    // read and the write on a single clock removes that class of bug entirely.
+    const rows = await prisma.$queryRaw<{ count: number; retryAfterSec: number }[]>`
+      INSERT INTO "RateLimit" ("key", "count", "expiresAt")
+      VALUES (${key}, 1, NOW() + make_interval(secs => ${windowSecs}))
+      ON CONFLICT ("key") DO UPDATE SET
+        "count" = CASE
+          WHEN "RateLimit"."expiresAt" <= NOW() THEN 1
+          ELSE "RateLimit"."count" + 1
+        END,
+        "expiresAt" = CASE
+          WHEN "RateLimit"."expiresAt" <= NOW() THEN NOW() + make_interval(secs => ${windowSecs})
+          ELSE "RateLimit"."expiresAt"
+        END
+      RETURNING
+        "count",
+        GREATEST(1, CEIL(EXTRACT(EPOCH FROM ("expiresAt" - NOW()))))::int AS "retryAfterSec"
+    `;
 
-    // No window yet, or the previous one lapsed — start a fresh one.
-    if (!existing || existing.expiresAt <= now) {
-      const expiresAt = new Date(now.getTime() + windowMs);
-      await prisma.rateLimit.upsert({
-        where: { key },
-        create: { key, count: 1, expiresAt },
-        update: { count: 1, expiresAt },
-      });
-      return { ok: true };
+    const row = rows[0];
+    // No row returned should be impossible for an upsert, but treat it the same
+    // as the catch below rather than throwing into a sign-in attempt.
+    if (!row) return { ok: true };
+
+    if (row.count > limit) {
+      return { ok: false, retryAfterSec: row.retryAfterSec };
     }
 
-    if (existing.count >= limit) {
-      return {
-        ok: false,
-        retryAfterSec: Math.max(1, Math.ceil((existing.expiresAt.getTime() - now.getTime()) / 1000)),
-      };
-    }
-
-    await prisma.rateLimit.update({ where: { key }, data: { count: { increment: 1 } } });
     return { ok: true };
   } catch (err) {
     console.error("[rate-limit] check failed, allowing request:", err);

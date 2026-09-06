@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { UPLOAD_RULES, sanitizeAndStore, type Kind } from "@/lib/storage";
+import { rateLimit, retryAfterLabel } from "@/lib/rate-limit";
 
 // sharp + fs need the Node runtime (not edge).
 export const runtime = "nodejs";
@@ -14,6 +15,16 @@ export async function POST(req: NextRequest) {
   const user = session?.user as { id?: string; role?: string } | undefined;
   if (!user?.id) {
     return NextResponse.json({ error: "Sign in to upload." }, { status: 401 });
+  }
+
+  // Uploads are re-encoded through sharp and stored, so an unthrottled caller
+  // costs both CPU and storage. Keyed per user, since upload requires a session.
+  const limited = await rateLimit(`upload:user:${user.id}`, 40, 60 * 60 * 1000);
+  if (!limited.ok) {
+    return NextResponse.json(
+      { error: `Too many uploads. Please try again in ${retryAfterLabel(limited.retryAfterSec)}.` },
+      { status: 429 },
+    );
   }
 
   let form: FormData;
@@ -58,9 +69,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Couldn't process this file." }, { status: 422 });
   }
 
-  // Doc scanning: dev stub marks clean. Prod enqueues a scan and sets "pending"
-  // with download gated until clean (UPLOAD_PLAN.md §10).
-  const scanStatus = "clean";
+  // Scan status must describe what actually happened. It was hardcoded "clean"
+  // for every kind, which made the download route's `scanStatus !== "clean"`
+  // gate permanently unreachable and put a truthful-looking claim on the row.
+  //
+  // Images are genuinely sanitized: `processImage` re-encodes through sharp,
+  // which drops metadata and any embedded payload, so "clean" is accurate.
+  // Everything else (PDFs) is stored byte-for-byte and has NOT been scanned —
+  // recorded honestly so the gate and any future scanner have something real to
+  // act on. Note that private kinds are refused outright under the blob driver,
+  // so no unscanned document is reachable in production today.
+  const scanStatus = rule.image ? "clean" : "unscanned";
 
   const created = await prisma.file.create({
     data: {

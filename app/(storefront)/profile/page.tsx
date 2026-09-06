@@ -3,7 +3,12 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { changePassword, updateCommunicationPrefs, updateProfile } from "@/app/actions/account";
+import {
+  changePassword,
+  updateCommunicationPrefs,
+  updatePrivacyPrefs,
+  updateProfile,
+} from "@/app/actions/account";
 import { fmtMonthYear, tierProgress } from "../account/_shared";
 import { AvatarUploader } from "./AvatarUploader";
 
@@ -160,21 +165,21 @@ export default async function ProfileSettingsPage({
                         <b style={{ color: "var(--ink)", fontWeight: 600, display: "block" }}>Event invitations</b>
                         <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--mute)" }}>Competitions near you</span>
                       </span>
-                      <label className="switch"><input type="checkbox" defaultChecked={user.marketingOptIn} /><span className="track" /></label>
+                      <label className="switch"><input type="checkbox" name="eventInvites" defaultChecked={user.eventInvitesOptIn} /><span className="track" /></label>
                     </div>
                     <div className="inforow">
                       <span className="k">
                         <b style={{ color: "var(--ink)", fontWeight: 600, display: "block" }}>Training reminders</b>
                         <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--mute)" }}>Upcoming batches</span>
                       </span>
-                      <label className="switch"><input type="checkbox" /><span className="track" /></label>
+                      <label className="switch"><input type="checkbox" name="trainingReminders" defaultChecked={user.trainingRemindersOptIn} /><span className="track" /></label>
                     </div>
                     <div className="inforow" style={{ borderBottom: "none" }}>
                       <span className="k">
                         <b style={{ color: "var(--ink)", fontWeight: 600, display: "block" }}>WhatsApp updates</b>
                         <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--mute)" }}>Order &amp; support</span>
                       </span>
-                      <label className="switch"><input type="checkbox" defaultChecked /><span className="track" /></label>
+                      <label className="switch"><input type="checkbox" name="whatsapp" defaultChecked={user.whatsappOptIn} /><span className="track" /></label>
                     </div>
                     <button type="submit" className="btn btn--primary btn--sm" style={{ marginTop: 18 }}>Save Preferences</button>
                     {sp.saved === "comms" && (
@@ -191,10 +196,19 @@ export default async function ProfileSettingsPage({
                     <span className="k" style={{ fontWeight: 600, color: "var(--ink)" }}>Download my data</span>
                     <Link href="/contact" className="btn btn--ghost btn--sm">Request</Link>
                   </div>
-                  <div className="inforow">
-                    <span className="k" style={{ fontWeight: 600, color: "var(--ink)" }}>Personalised recommendations</span>
-                    <label className="switch"><input type="checkbox" defaultChecked /><span className="track" /></label>
-                  </div>
+                  {/* Its own form and action: submitting the comms form would
+                      read this switch as absent and silently clear it, and vice
+                      versa, since an unchecked box sends nothing. */}
+                  <form action={updatePrivacyPrefs}>
+                    <div className="inforow">
+                      <span className="k" style={{ fontWeight: 600, color: "var(--ink)" }}>Personalised recommendations</span>
+                      <label className="switch"><input type="checkbox" name="personalisedRecs" defaultChecked={user.personalisedRecsOptIn} /><span className="track" /></label>
+                    </div>
+                    <button type="submit" className="btn btn--ghost btn--sm" style={{ marginTop: 12 }}>Save</button>
+                    {sp.saved === "privacy" && (
+                      <div className="fmsg" role="status"><Check />Privacy settings saved.</div>
+                    )}
+                  </form>
                   <div className="inforow" style={{ borderBottom: "none" }}>
                     <span className="k" style={{ fontWeight: 600, color: "var(--red)" }}>Delete my account</span>
                     <Link href="/contact" className="btn btn--ghost btn--sm" style={{ color: "var(--red)", borderColor: "var(--red-wash)" }}>Delete</Link>

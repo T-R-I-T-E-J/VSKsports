@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
+import { getValidatedSession } from "@/lib/session";
 import { AdminShell } from "@/components/layout/AdminShell";
 import "./admin.css";
 
@@ -15,9 +15,10 @@ export default async function AdminPanelLayout({
   // where a crafted header skipped middleware and reached the page directly.
   // Admin *actions* already call requireStaff(), so writes were covered; this
   // closes the read side (customer PII, orders, revenue) for the whole group.
-  const session = await auth();
-  const role = session?.user?.role;
-  if (role !== "ADMIN" && role !== "STAFF") {
+  // Role comes from the database, not the JWT: a demoted admin's existing token
+  // still carries the old role, and this is the read side of the panel.
+  const validated = await getValidatedSession();
+  if (!validated || (validated.role !== "ADMIN" && validated.role !== "STAFF")) {
     redirect("/admin/login");
   }
 

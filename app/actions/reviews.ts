@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { rateLimit } from "@/lib/rate-limit";
 
 export async function submitReview(formData: FormData): Promise<void> {
   const session = await auth();
@@ -27,6 +28,23 @@ export async function submitReview(formData: FormData): Promise<void> {
   });
   if (!orderItem || !orderItem.productId) {
     throw new Error("Purchased product not found");
+  }
+
+  // One review per customer per product. Purchase verification alone did not
+  // stop the SAME purchase being reviewed repeatedly, so a single buyer could
+  // post any number of reviews for one product and move its rating at will.
+  const existing = await prisma.review.findFirst({
+    where: { userId, productId: orderItem.productId },
+    select: { id: true },
+  });
+  if (existing) {
+    redirect(`/reviews/write?item=${orderItemId}&error=duplicate`);
+  }
+
+  // Belt and braces against automated submission, including across products.
+  const limited = await rateLimit(`review:user:${userId}`, 10, 60 * 60 * 1000);
+  if (!limited.ok) {
+    redirect(`/reviews/write?item=${orderItemId}&error=ratelimit`);
   }
 
   const user = await prisma.user.findUnique({ where: { id: userId } });
