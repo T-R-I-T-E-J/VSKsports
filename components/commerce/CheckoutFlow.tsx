@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { computeTotals, shippingCost, GST_LABEL, type ShippingMethod } from "@/lib/pricing";
+import { computeTotals, shippingCost, gstLabel, type PricingConfig, type ShippingMethod } from "@/lib/pricing";
 import { formatINR } from "@/lib/format";
 import { MediaImage } from "@/components/motifs/MediaImage";
 import {
@@ -62,11 +62,27 @@ export function CheckoutFlow({
   items,
   subtotalInr,
   user,
+  pricing,
+  discountInr,
+  couponCode,
 }: {
   addresses: Addr[];
   items: Mini[];
   subtotalInr: number;
   user: { name: string; email: string };
+  /**
+   * Passed down from the server rather than imported, because this is a client
+   * component and the rates live in the database. The figures shown here must
+   * match what startCheckout will charge, which loads the same config.
+   */
+  pricing: PricingConfig;
+  /**
+   * Resolved on the server from the cart's stored code. Shown here so the
+   * customer sees the same total startCheckout will charge — it re-runs the
+   * redemption itself and does not trust this figure.
+   */
+  discountInr: number;
+  couponCode: string | null;
 }) {
   const router = useRouter();
   const [addressId, setAddressId] = useState(
@@ -80,7 +96,7 @@ export function CheckoutFlow({
   // instead of creating a fresh one on every try.
   const [retryOrderId, setRetryOrderId] = useState<string | null>(null);
 
-  const totals = computeTotals(subtotalInr, shipping);
+  const totals = computeTotals(subtotalInr, shipping, discountInr, pricing);
 
   // Warm the gateway SDK on mount so clicking Place Order opens the modal with
   // no network round-trip in between, and a load failure surfaces before an
@@ -258,7 +274,7 @@ export function CheckoutFlow({
               {SHIPPING.map((s) => {
                 // Same helper computeTotals uses, so this price can never
                 // disagree with the summary below it.
-                const cost = shippingCost(s.id, subtotalInr);
+                const cost = shippingCost(s.id, subtotalInr, pricing);
                 return (
                   <div
                     key={s.id}
@@ -304,7 +320,13 @@ export function CheckoutFlow({
               {totals.shippingInr === 0 ? "FREE" : formatINR(totals.shippingInr)}
             </b>
           </div>
-          <div className="sumline"><span>{GST_LABEL}</span><b>{formatINR(totals.gstInr)}</b></div>
+          <div className="sumline"><span>{gstLabel(pricing)}</span><b>{formatINR(totals.gstInr)}</b></div>
+          {totals.discountInr > 0 ? (
+            <div className="sumline">
+              <span>Discount{couponCode ? ` (${couponCode})` : ""}</span>
+              <b style={{ color: "#1FA855" }}>&minus;{formatINR(totals.discountInr)}</b>
+            </div>
+          ) : null}
           <div className="sumtotal"><span>Total</span><b>{formatINR(totals.totalInr)}</b></div>
           <p className="mono-tag" style={{ margin: "8px 0 18px" }}>Inclusive of all taxes</p>
 

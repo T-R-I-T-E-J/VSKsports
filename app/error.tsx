@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
+import { reportClientError } from "@/lib/report-error";
 
 export default function Error({
   error,
@@ -11,8 +12,10 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Surface for observability; replace with your error reporter.
     console.error(error);
+    // Without this the crash stays in the visitor's console and nobody here
+    // ever learns the page is broken.
+    reportClientError(error, "page");
   }, [error]);
 
   return (

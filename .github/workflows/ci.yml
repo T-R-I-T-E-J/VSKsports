@@ -87,5 +87,29 @@ jobs:
       - name: Test
         run: npx vitest run
 
+      # A CHECK constraint applies to the whole table, so a migration adding
+      # one fails partway if any existing row violates it. Proven here on a
+      # fresh database; run the same script against production before the first
+      # deploy of that migration (see docs/RUNBOOK.md).
+      - name: Assert data satisfies the CHECK constraints
+        run: node scripts/check-data-constraints.mjs
+
       - name: Build
         run: npx next build
+
+      # Browser tests. The unit suite proves the logic; these prove a customer
+      # can actually load the pages — a server component that throws during
+      # render passes every unit test there is.
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: End-to-end tests
+        run: npx playwright test
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

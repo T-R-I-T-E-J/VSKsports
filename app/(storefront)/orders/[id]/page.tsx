@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { formatINR } from "@/lib/format";
-import { GST_LABEL } from "@/lib/pricing";
+import { gstLabelForOrder } from "@/lib/pricing";
 import { MediaImage } from "@/components/motifs/MediaImage";
 import { STATUS_LABELS, StatusChip, TrackStepper, fmtDate } from "../../account/_shared";
 
@@ -140,7 +140,7 @@ export default async function OrderDetailPage({
                 <span>Shipping</span>
                 {order.shippingInr === 0 ? <b style={{ color: "#1FA855" }}>FREE</b> : <b>{formatINR(order.shippingInr)}</b>}
               </div>
-              <div className="sumline"><span>{GST_LABEL}</span><b>{formatINR(order.gstInr)}</b></div>
+              <div className="sumline"><span>{gstLabelForOrder(order.subtotalInr, order.gstInr)}</span><b>{formatINR(order.gstInr)}</b></div>
               {order.discountInr > 0 && (
                 <div className="sumline"><span>Discount</span><b style={{ color: "#1FA855" }}>-{formatINR(order.discountInr)}</b></div>
               )}

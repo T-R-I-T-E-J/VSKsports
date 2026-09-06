@@ -79,7 +79,14 @@ export default async function AdminCoupons({ searchParams }: { searchParams: Pro
                           </span>
                         ) : null}
                       </td>
-                      <td className="num">{c._count.orders}</td>
+                      <td className="num">
+                        {c.timesUsed}
+                        {c.maxRedemptions != null ? (
+                          <span className="muted" style={{ fontFamily: "var(--font-mono)", fontSize: 11, display: "block" }}>
+                            of {c.maxRedemptions}
+                          </span>
+                        ) : null}
+                      </td>
                       <td className="muted" style={{ color: "var(--ink-2)" }}>
                         {c.expiresAt ? fmtDate(c.expiresAt) : "Ongoing"}
                       </td>
@@ -148,6 +155,16 @@ export default async function AdminCoupons({ searchParams }: { searchParams: Pro
                   <span>₹</span>
                   <input name="minOrderInr" placeholder="5,000" />
                 </div>
+              </div>
+            </div>
+            <div className="afield--row">
+              <div className="afield">
+                <label>Total redemptions</label>
+                <input name="maxRedemptions" placeholder="Unlimited" inputMode="numeric" />
+              </div>
+              <div className="afield">
+                <label>Per customer</label>
+                <input name="perUserLimit" placeholder="Unlimited" inputMode="numeric" />
               </div>
             </div>
             <div className="afield">

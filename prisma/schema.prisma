@@ -8,11 +8,11 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider  = "postgresql"
   // Runtime connection. In production this is the POOLED endpoint (Neon
   // `-pooler` host / PgBouncer): every serverless instance opens its own pool,
   // so an unpooled URL exhausts Postgres connections under modest traffic.
-  url      = env("DATABASE_URL")
+  url       = env("DATABASE_URL")
   // Migrations need a DIRECT connection — `prisma migrate deploy` cannot run
   // over Neon's transaction-mode pooler. DATABASE_URL is the `-pooler` host
   // (runtime; each serverless instance opens its own pool), DIRECT_URL is the
@@ -37,38 +37,38 @@ enum CustomerType {
 }
 
 model User {
-  id             String       @id @default(cuid())
-  name           String?
-  email          String       @unique
-  emailVerified  DateTime?
-  passwordHash   String?
-  image          String?
-  role           Role         @default(CUSTOMER)
-  customerType   CustomerType @default(INDIVIDUAL)
-  phone          String?
-  location       String?
+  id                     String       @id @default(cuid())
+  name                   String?
+  email                  String       @unique
+  emailVerified          DateTime?
+  passwordHash           String?
+  image                  String?
+  role                   Role         @default(CUSTOMER)
+  customerType           CustomerType @default(INDIVIDUAL)
+  phone                  String?
+  location               String?
   // --- compliance hooks (currently inert; standard-retail mode) ---
-  dateOfBirth    DateTime? // age gating later
-  verifiedAt     DateTime? // ID / licence verification later
+  dateOfBirth            DateTime? // age gating later
+  verifiedAt             DateTime? // ID / licence verification later
   // ---
-  loyaltyPoints  Int          @default(0)
-  loyaltyTier    LoyaltyTier  @default(BRONZE)
-  marketingOptIn Boolean      @default(true)
+  loyaltyPoints          Int          @default(0)
+  loyaltyTier            LoyaltyTier  @default(BRONZE)
+  marketingOptIn         Boolean      @default(true)
   // Communication preferences. The profile form rendered switches for all of
   // these but only submitted `marketing`, so the rest were discarded while the
   // page reported "Preferences saved" — consent shown as recorded but never
   // stored. Defaults match what that form displayed.
-  eventInvitesOptIn      Boolean @default(true)
-  trainingRemindersOptIn Boolean @default(false)
-  whatsappOptIn          Boolean @default(true)
-  personalisedRecsOptIn  Boolean @default(true)
+  eventInvitesOptIn      Boolean      @default(true)
+  trainingRemindersOptIn Boolean      @default(false)
+  whatsappOptIn          Boolean      @default(true)
+  personalisedRecsOptIn  Boolean      @default(true)
   // Session floor. JWTs issued before this instant are rejected, which is what
   // makes a password reset actually evict an attacker and a role change take
   // effect immediately — neither was possible with a stateless JWT alone.
-  sessionsValidFrom DateTime?
-  lastLoginAt    DateTime?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  sessionsValidFrom      DateTime?
+  lastLoginAt            DateTime?
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
 
   accounts              Account[]
   sessions              Session[]
@@ -120,6 +120,7 @@ model Session {
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId])
 }
 
@@ -146,6 +147,7 @@ model Address {
   isDefault Boolean  @default(false)
   createdAt DateTime @default(now())
   orders    Order[]
+
   @@index([userId])
 }
 
@@ -202,6 +204,7 @@ model Product {
   wishlistItems WishlistItem[]
   orderItems    OrderItem[]
   cartItems     CartItem[]
+
   @@index([brandId])
   @@index([categoryId])
 }
@@ -215,6 +218,7 @@ model ProductImage {
   url       String
   alt       String?
   position  Int     @default(0)
+
   @@index([productId])
 }
 
@@ -250,31 +254,31 @@ enum FileStatus {
 }
 
 model File {
-  id           String         @id @default(cuid())
-  key          String         @unique // storage key/path
-  url          String? // public URL or canonical ref; null until ATTACHED
-  mime         String
-  sizeBytes    Int
-  width        Int?
-  height       Int?
-  kind         FileKind       @default(OTHER)
-  visibility   FileVisibility @default(PUBLIC)
-  status       FileStatus     @default(UPLOADED)
-  sanitized    Boolean        @default(false)
-  scanStatus   String? // null | "pending" | "clean" | "flagged"
-  alt          String?
-  variants     Json? // { "thumb": "...", "md": "..." }
-  uploadedById String?
-  uploadedBy   User?          @relation("FileUploader", fields: [uploadedById], references: [id])
+  id             String          @id @default(cuid())
+  key            String          @unique // storage key/path
+  url            String? // public URL or canonical ref; null until ATTACHED
+  mime           String
+  sizeBytes      Int
+  width          Int?
+  height         Int?
+  kind           FileKind        @default(OTHER)
+  visibility     FileVisibility  @default(PUBLIC)
+  status         FileStatus      @default(UPLOADED)
+  sanitized      Boolean         @default(false)
+  scanStatus     String? // null | "pending" | "clean" | "flagged"
+  alt            String?
+  variants       Json? // { "thumb": "...", "md": "..." }
+  uploadedById   String?
+  uploadedBy     User?           @relation("FileUploader", fields: [uploadedById], references: [id])
   productImage   ProductImage?
   reviewPhoto    ReviewPhoto?
   returnPhoto    ReturnPhoto?
   dealerDocument DealerDocument?
   orderDocument  OrderDocument?
-  eventImage     Event?         @relation("EventImage")
-  trainingImage  TrainingBatch? @relation("TrainingImage")
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  eventImage     Event?          @relation("EventImage")
+  trainingImage  TrainingBatch?  @relation("TrainingImage")
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
 
   @@index([kind, createdAt])
   @@index([status])
@@ -289,6 +293,7 @@ model ReviewPhoto {
   file     File   @relation(fields: [fileId], references: [id])
   url      String
   position Int    @default(0)
+
   @@index([reviewId])
 }
 
@@ -300,6 +305,7 @@ model ReturnPhoto {
   file     File   @relation(fields: [fileId], references: [id])
   url      String
   position Int    @default(0)
+
   @@index([returnId])
 }
 
@@ -311,6 +317,7 @@ model DealerDocument {
   file          File              @relation(fields: [fileId], references: [id])
   label         String?
   createdAt     DateTime          @default(now())
+
   @@index([applicationId])
 }
 
@@ -323,6 +330,7 @@ model OrderDocument {
   label     String?
   docType   String? // "invoice" | "label" | "other"
   createdAt DateTime @default(now())
+
   @@index([orderId])
 }
 
@@ -334,6 +342,7 @@ model ProductVariant {
   label     String // ".177 · Aluminium"
   priceInr  Int?
   stock     Int     @default(0)
+
   @@index([productId])
 }
 
@@ -353,12 +362,16 @@ model InventoryItem {
 // Commerce
 // ============================================================
 model Cart {
-  id        String     @id @default(cuid())
-  token     String     @unique // cookie-based identifier (guest + logged-in)
-  userId    String?    @unique
-  user      User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items     CartItem[]
-  updatedAt DateTime   @updatedAt
+  id         String     @id @default(cuid())
+  token      String     @unique // cookie-based identifier (guest + logged-in)
+  userId     String?    @unique
+  user       User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items      CartItem[]
+  // The CODE, not a coupon id: a coupon can be deactivated, expire or run out
+  // between the customer applying it and paying, so it is re-validated against
+  // the live row at checkout rather than trusted from here.
+  couponCode String?
+  updatedAt  DateTime   @updatedAt
 }
 
 model CartItem {
@@ -393,24 +406,24 @@ enum PaymentStatus {
 }
 
 model Order {
-  id                String        @id @default(cuid())
-  number            String        @unique // "VSK-2026-0417"
+  id                String          @id @default(cuid())
+  number            String          @unique // "VSK-2026-0417"
   userId            String?
-  user              User?         @relation(fields: [userId], references: [id])
+  user              User?           @relation(fields: [userId], references: [id])
   addressId         String?
-  address           Address?      @relation(fields: [addressId], references: [id])
-  status            OrderStatus   @default(PENDING)
-  paymentStatus     PaymentStatus @default(PENDING)
+  address           Address?        @relation(fields: [addressId], references: [id])
+  status            OrderStatus     @default(PENDING)
+  paymentStatus     PaymentStatus   @default(PENDING)
   subtotalInr       Int
-  gstInr            Int           @default(0) // computed via computeTotals (GST_RATE)
-  shippingInr       Int           @default(0)
-  discountInr       Int           @default(0)
+  gstInr            Int             @default(0) // computed via computeTotals (GST_RATE)
+  shippingInr       Int             @default(0)
+  discountInr       Int             @default(0)
   totalInr          Int
   couponId          String?
-  coupon            Coupon?       @relation(fields: [couponId], references: [id])
+  coupon            Coupon?         @relation(fields: [couponId], references: [id])
   // Unique: this is the webhook's lookup key. Two orders must never share one
   // gateway order, and the webhook should not scan the table to find it.
-  razorpayOrderId   String?       @unique
+  razorpayOrderId   String?         @unique
   razorpayPaymentId String?
   failureReason     String? // set when a payment attempt fails (PaymentStatus.FAILED)
   trackingNumber    String?
@@ -421,8 +434,9 @@ model Order {
   events            OrderEvent[]
   emails            EmailLog[]
   documents         OrderDocument[]
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
   @@index([userId, createdAt])
   @@index([addressId])
   @@index([couponId])
@@ -439,6 +453,7 @@ model OrderItem {
   unitPriceInr Int
   quantity     Int
   returnItems  ReturnItem[]
+
   @@index([orderId])
   @@index([productId])
 }
@@ -449,14 +464,22 @@ enum CouponType {
 }
 
 model Coupon {
-  id          String     @id @default(cuid())
-  code        String     @unique
-  type        CouponType @default(FLAT)
-  value       Int // rupees (FLAT) or percent (PERCENT)
-  minOrderInr Int?
-  active      Boolean    @default(true)
-  expiresAt   DateTime?
-  orders      Order[]
+  id             String     @id @default(cuid())
+  code           String     @unique
+  type           CouponType @default(FLAT)
+  value          Int // rupees (FLAT) or percent (PERCENT)
+  minOrderInr    Int?
+  active         Boolean    @default(true)
+  expiresAt      DateTime?
+  // Global redemption cap. NULL means unlimited. `timesUsed` is incremented by
+  // a conditional UPDATE (see lib/coupons.ts) so concurrent checkouts cannot
+  // both take the last redemption.
+  maxRedemptions Int?
+  timesUsed      Int        @default(0)
+  // Per-customer cap, counted over that customer's non-cancelled orders.
+  // NULL means unlimited.
+  perUserLimit   Int?
+  orders         Order[]
 }
 
 enum ReviewStatus {
@@ -466,20 +489,21 @@ enum ReviewStatus {
 }
 
 model Review {
-  id           String       @id @default(cuid())
+  id           String        @id @default(cuid())
   productId    String
-  product      Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product      Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
   userId       String?
-  user         User?        @relation(fields: [userId], references: [id])
+  user         User?         @relation(fields: [userId], references: [id])
   authorName   String
   rating       Int
   title        String?
   body         String
-  status       ReviewStatus @default(PENDING)
+  status       ReviewStatus  @default(PENDING)
   orderId      String? // verified-purchase link
-  helpfulCount Int          @default(0)
-  createdAt    DateTime     @default(now())
+  helpfulCount Int           @default(0)
+  createdAt    DateTime      @default(now())
   photos       ReviewPhoto[]
+
   @@index([productId, status])
   @@index([userId])
 }
@@ -503,6 +527,7 @@ model RewardLedger {
   points    Int // +earn / -redeem
   reason    String
   createdAt DateTime @default(now())
+
   @@index([userId])
 }
 
@@ -524,6 +549,7 @@ model Notification {
   link      String?
   read      Boolean          @default(false)
   createdAt DateTime         @default(now())
+
   @@index([userId, createdAt])
 }
 
@@ -536,21 +562,22 @@ enum ReturnStatus {
 }
 
 model Return {
-  id          String       @id @default(cuid())
-  rmaNumber   String?      @unique
+  id          String        @id @default(cuid())
+  rmaNumber   String?       @unique
   orderId     String
-  order       Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order       Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
   userId      String
-  user        User         @relation(fields: [userId], references: [id])
+  user        User          @relation(fields: [userId], references: [id])
   reason      String
   comment     String?
-  status      ReturnStatus @default(REQUESTED)
+  status      ReturnStatus  @default(REQUESTED)
   refundInr   Int?
   resolution  String?
   items       ReturnItem[]
   photos      ReturnPhoto[]
   processedAt DateTime?
-  createdAt   DateTime     @default(now())
+  createdAt   DateTime      @default(now())
+
   @@index([orderId])
   @@index([userId])
 }
@@ -565,9 +592,9 @@ enum DealerAppStatus {
 }
 
 model DealerApplication {
-  id              String          @id @default(cuid())
-  userId          String?         @unique
-  user            User?           @relation("DealerApplicant", fields: [userId], references: [id])
+  id              String           @id @default(cuid())
+  userId          String?          @unique
+  user            User?            @relation("DealerApplicant", fields: [userId], references: [id])
   business        String
   contactName     String
   email           String
@@ -578,14 +605,15 @@ model DealerApplication {
   businessType    String?
   yearsInBusiness String?
   message         String?
-  status          DealerAppStatus @default(PENDING)
+  status          DealerAppStatus  @default(PENDING)
   reviewedById    String?
-  reviewedBy      User?           @relation("ReviewedApplications", fields: [reviewedById], references: [id])
+  reviewedBy      User?            @relation("ReviewedApplications", fields: [reviewedById], references: [id])
   reviewNotes     String?
   terms           String? // agreed terms on approval (margin, territory, credit)
   reviewedAt      DateTime?
-  createdAt       DateTime        @default(now())
+  createdAt       DateTime         @default(now())
   documents       DealerDocument[]
+
   @@index([reviewedById])
 }
 
@@ -663,6 +691,7 @@ model BlogPost {
   published   Boolean  @default(true)
   publishedAt String? // display string ("Jun 2026")
   createdAt   DateTime @default(now())
+
   @@index([authorId])
 }
 
@@ -681,6 +710,7 @@ model OrderEvent {
   status    OrderStatus
   note      String?
   createdAt DateTime    @default(now())
+
   @@index([orderId])
 }
 
@@ -695,6 +725,7 @@ model ReturnItem {
   orderItem   OrderItem? @relation(fields: [orderItemId], references: [id])
   name        String
   quantity    Int        @default(1)
+
   @@index([returnId])
   @@index([orderItemId])
 }
@@ -710,6 +741,7 @@ model CustomerNote {
   author    User?    @relation("AuthoredNotes", fields: [authorId], references: [id])
   body      String
   createdAt DateTime @default(now())
+
   @@index([userId])
   @@index([authorId])
 }
@@ -766,6 +798,7 @@ model RewardRedemption {
   pointsSpent  Int
   status       RedemptionStatus @default(PENDING)
   createdAt    DateTime         @default(now())
+
   @@index([userId])
   @@index([rewardItemId])
 }
@@ -792,6 +825,7 @@ model TrainingRegistration {
   experience String?
   status     RegistrationStatus @default(PENDING)
   createdAt  DateTime           @default(now())
+
   @@index([batchId])
   @@index([userId])
 }
@@ -808,6 +842,7 @@ model EventRegistration {
   discipline String?
   status     RegistrationStatus @default(PENDING)
   createdAt  DateTime           @default(now())
+
   @@index([eventId])
   @@index([userId])
 }
@@ -839,6 +874,7 @@ model EmailLog {
   orderId   String?
   order     Order?      @relation(fields: [orderId], references: [id])
   createdAt DateTime    @default(now())
+
   @@index([orderId])
 }
 
@@ -864,6 +900,7 @@ model StaffAction {
   entityId  String?
   detail    String?
   createdAt DateTime @default(now())
+
   @@index([staffId])
 }
 
@@ -879,6 +916,7 @@ model InventoryAdjustment {
   staffId         String?
   staff           User?         @relation("InventoryAdjustments", fields: [staffId], references: [id])
   createdAt       DateTime      @default(now())
+
   @@index([inventoryItemId])
   @@index([staffId])
 }

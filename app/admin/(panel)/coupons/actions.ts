@@ -5,6 +5,12 @@ import type { CouponType } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { requireStaff, audit, str, toInt, toIntOrNull } from "../_lib/admin";
 
+/** A cap field: blank or non-positive means "no limit" (stored as NULL). */
+function positiveOrNull(value: FormDataEntryValue | null): number | null {
+  const n = toIntOrNull(value);
+  return n != null && n > 0 ? n : null;
+}
+
 function couponData(fd: FormData) {
   const type = (str(fd.get("type")) === "PERCENT" ? "PERCENT" : "FLAT") as CouponType;
   const expiresRaw = str(fd.get("expiresAt"));
@@ -14,6 +20,11 @@ function couponData(fd: FormData) {
     type,
     value: toInt(fd.get("value")),
     minOrderInr: toIntOrNull(fd.get("minOrderInr")),
+    // NULL means unlimited. A zero or negative cap is rejected by a CHECK
+    // constraint, so normalise "0" (a plausible way to type "no limit") to NULL
+    // rather than creating a coupon nobody can ever redeem.
+    maxRedemptions: positiveOrNull(fd.get("maxRedemptions")),
+    perUserLimit: positiveOrNull(fd.get("perUserLimit")),
     active: fd.get("active") === "on",
     expiresAt: expiresAt && !isNaN(expiresAt.getTime()) ? expiresAt : null,
   };

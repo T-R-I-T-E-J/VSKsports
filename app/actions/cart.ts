@@ -3,6 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { getOrCreateCart } from "@/lib/cart";
+import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
+import { checkCoupon, normaliseCode } from "@/lib/coupons";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
 
 /** Max units of a single product+variant per cart line. */
 const MAX_QTY = 99;
@@ -78,4 +82,55 @@ export async function removeCartItem(itemId: string) {
   const cart = await getOrCreateCart();
   await prisma.cartItem.deleteMany({ where: { id: itemId, cartId: cart.id } });
   revalidatePath("/cart");
+}
+
+/**
+ * Apply a promo code to the cart.
+ *
+ * Stores the CODE, not a resolved discount: the coupon is re-validated and the
+ * discount recomputed at checkout, so a code that expires or runs out while the
+ * cart sits open cannot be honoured on a stale figure.
+ *
+ * Rate-limited because this endpoint is an oracle — without a limit, an
+ * attacker could enumerate valid codes by brute force.
+ */
+export async function applyCoupon(code: string) {
+  const raw = typeof code === "string" ? code : "";
+  const normalised = normaliseCode(raw);
+  if (!normalised || normalised.length > 64) {
+    redirect("/cart?coupon=invalid");
+  }
+
+  const cart = await getOrCreateCart();
+  const ip = await clientIp();
+  const limited = await rateLimit(`coupon:${ip}`, 10, 10 * 60 * 1000);
+  if (!limited.ok) {
+    redirect(`/cart?coupon=throttled&retry=${limited.retryAfterSec}`);
+  }
+
+  const full = await prisma.cart.findUnique({
+    where: { id: cart.id },
+    include: { items: { include: { product: true } } },
+  });
+  const subtotal =
+    full?.items.reduce((s, i) => s + i.product.priceInr * i.quantity, 0) ?? 0;
+
+  const session = await auth();
+  const result = await checkCoupon(normalised, subtotal, session?.user?.id ?? null);
+  if (!result.ok) {
+    redirect(`/cart?coupon=rejected&reason=${result.reason}`);
+  }
+
+  await prisma.cart.update({ where: { id: cart.id }, data: { couponCode: result.code } });
+  revalidatePath("/cart");
+  revalidatePath("/checkout");
+  redirect("/cart?coupon=applied");
+}
+
+export async function removeCoupon() {
+  const cart = await getOrCreateCart();
+  await prisma.cart.update({ where: { id: cart.id }, data: { couponCode: null } });
+  revalidatePath("/cart");
+  revalidatePath("/checkout");
+  redirect("/cart");
 }

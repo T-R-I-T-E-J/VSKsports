@@ -4,6 +4,8 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getCart } from "@/lib/cart";
 import { computeTotals, type ShippingMethod } from "@/lib/pricing";
+import { getPricingConfig } from "@/lib/settings";
+import { redeemCoupon } from "@/lib/coupons";
 import { settleOrderPaid, markOrderFailed, SETTLEABLE_FROM } from "@/lib/orders";
 import {
   razorpay,
@@ -202,7 +204,9 @@ export async function startCheckout(
   );
 
   const subtotal = cart.items.reduce((s, i) => s + i.product.priceInr * i.quantity, 0);
-  const totals = computeTotals(subtotal, method);
+  // Authoritative charge: always the configured rates, never the cart's own
+  // figures and never a rate baked into the bundle.
+  const pricing = await getPricingConfig();
   const number = await uniqueOrderNumber();
 
   // Bind the cookie cart to the user so the webhook — which has no cookie —
@@ -216,27 +220,61 @@ export async function startCheckout(
     await prisma.cart.update({ where: { id: cart.id }, data: { userId } });
   }
 
-  const order = await prisma.order.create({
-    data: {
-      number,
-      userId,
-      addressId,
-      status: "PENDING",
-      paymentStatus: "PENDING",
-      subtotalInr: totals.subtotalInr,
-      gstInr: totals.gstInr,
-      shippingInr: totals.shippingInr,
-      totalInr: totals.totalInr,
-      items: {
-        create: cart.items.map((i) => ({
-          productId: i.productId,
-          name: i.product.name,
-          variantLabel: i.variantLabel || null,
-          unitPriceInr: i.product.priceInr,
-          quantity: i.quantity,
-        })),
+  /**
+   * Redeeming the coupon and creating the order share ONE transaction.
+   *
+   * The redemption counter is incremented by a conditional UPDATE inside it, so
+   * two customers racing for the last redemption cannot both win, and a failure
+   * to write the order rolls the redemption back rather than burning it.
+   *
+   * The reservation is taken at order creation, not at settlement. That is the
+   * conservative direction: an abandoned checkout consumes a redemption (the
+   * customer can retry on the same order, so a retry does not consume a second
+   * one), but the advertised cap is never exceeded. Overselling a "first 100
+   * customers" promotion is the worse failure.
+   */
+  const { order, totals } = await prisma.$transaction(async (tx) => {
+    let discountInr = 0;
+    let couponId: string | null = null;
+
+    if (cart.couponCode) {
+      const redeemed = await redeemCoupon(tx, cart.couponCode, subtotal, userId);
+      if (!redeemed.ok) {
+        // Don't silently charge full price — the customer chose this code and
+        // needs to know it was not applied before they pay.
+        throw new Error(`${redeemed.message} Please remove it from your cart to continue.`);
+      }
+      discountInr = redeemed.discountInr;
+      couponId = redeemed.couponId;
+    }
+
+    const computed = computeTotals(subtotal, method, discountInr, pricing);
+
+    const created = await tx.order.create({
+      data: {
+        number,
+        userId,
+        addressId,
+        status: "PENDING",
+        paymentStatus: "PENDING",
+        subtotalInr: computed.subtotalInr,
+        gstInr: computed.gstInr,
+        shippingInr: computed.shippingInr,
+        discountInr: computed.discountInr,
+        totalInr: computed.totalInr,
+        couponId,
+        items: {
+          create: cart.items.map((i) => ({
+            productId: i.productId,
+            name: i.product.name,
+            variantLabel: i.variantLabel || null,
+            unitPriceInr: i.product.priceInr,
+            quantity: i.quantity,
+          })),
+        },
       },
-    },
+    });
+    return { order: created, totals: computed };
   });
 
   return openGatewayOrder(order.id, order.number, totals.totalInr);

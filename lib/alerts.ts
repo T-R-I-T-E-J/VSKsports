@@ -23,7 +23,11 @@ export type AlertEvent =
   | "payment.settlement_failed"
   | "email.delivery_failed"
   | "order.reconciled"
-  | "order.reconcile_failed";
+  | "order.reconcile_failed"
+  // Reported by the client error boundaries via /api/client-error. A crash
+  // inside a client component reaches no server log on its own, so without
+  // this the customer sees a broken page and nobody finds out.
+  | "client.render_failed";
 
 /** Stable, greppable prefix — alerting rules match on this. */
 const PREFIX = "[ALERT]";

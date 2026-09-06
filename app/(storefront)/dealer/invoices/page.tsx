@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { formatINR } from "@/lib/format";
-import { GST_LABEL } from "@/lib/pricing";
+import { gstLabelForOrder } from "@/lib/pricing";
 import { PageHeader } from "@/components/storefront/PageHeader";
 import { DealerNav } from "../DealerNav";
 import { requireDealerPage, getCreditUsed, getDealerProfile } from "../data";
@@ -82,7 +82,7 @@ export default async function DealerInvoicesPage() {
                         <td className="num">
                           {formatINR(o.totalInr)}
                           <span style={{ display: "block", fontFamily: "var(--font-mono)", fontWeight: 400, fontSize: 10, color: "var(--mute)" }}>
-                            incl. {GST_LABEL} {formatINR(o.gstInr)}
+                            incl. {gstLabelForOrder(o.subtotalInr, o.gstInr)} {formatINR(o.gstInr)}
                           </span>
                         </td>
                         <td style={{ textAlign: "right" }}>
@@ -105,7 +105,7 @@ export default async function DealerInvoicesPage() {
           </div>
 
           <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--mute)", marginTop: 14, lineHeight: 1.7 }}>
-            All amounts include {GST_LABEL} on the goods subtotal. GST invoices are issued against
+            All amounts include GST on the goods subtotal. GST invoices are issued against
             GSTIN {profile?.gstNumber ?? "on file"} at dispatch. Credit terms per your dealer
             agreement{profile?.territory ? ` · territory: ${profile.territory}` : ""}.
           </p>

@@ -48,6 +48,10 @@ export default defineConfig({
     // order, and the concurrency tests drive parallelism explicitly with
     // Promise.all where that is the behaviour under test.
     fileParallelism: false,
+    // Playwright specs live in e2e/ and are driven by playwright.config.ts.
+    // Vitest's default glob picks up *.spec.ts, so without this it tries to run
+    // them and fails on the missing @playwright/test runner context.
+    exclude: ["**/node_modules/**", "**/dist/**", "e2e/**"],
     // Concurrency tests wait on real transactions; the 5s default is tight.
     testTimeout: 30_000,
     hookTimeout: 30_000,

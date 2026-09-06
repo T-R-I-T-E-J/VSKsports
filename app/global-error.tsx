@@ -1,5 +1,8 @@
 "use client";
 
+import { useEffect } from "react";
+import { reportClientError } from "@/lib/report-error";
+
 /**
  * Last-resort boundary for errors thrown in the root layout itself.
  * Must render its own <html>/<body> and cannot rely on app CSS, so styles
@@ -12,6 +15,11 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  useEffect(() => {
+    console.error(error);
+    reportClientError(error, "global");
+  }, [error]);
+
   return (
     <html lang="en">
       <body

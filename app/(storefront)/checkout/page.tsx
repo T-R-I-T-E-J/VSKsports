@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { getPricingConfig } from "@/lib/settings";
+import { checkCoupon } from "@/lib/coupons";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -21,6 +23,13 @@ export default async function CheckoutPage() {
   });
 
   const subtotalInr = items.reduce((s, i) => s + i.product.priceInr * i.quantity, 0);
+  const pricing = await getPricingConfig();
+  // Same re-validation as the cart page: the stored code is checked against the
+  // live coupon row so the summary cannot promise a discount checkout will refuse.
+  const applied = cart?.couponCode
+    ? await checkCoupon(cart.couponCode, subtotalInr, session?.user?.id ?? null)
+    : null;
+  const discountInr = applied?.ok ? applied.discountInr : 0;
   const mini = items.map((i) => ({
     name: i.product.name,
     meta: [i.variantLabel || null, `Qty ${i.quantity}`].filter(Boolean).join(" · "),
@@ -42,6 +51,9 @@ export default async function CheckoutPage() {
       <section className="section--tight" style={{ padding: "24px 0 80px" }}>
         <div className="wrap">
           <CheckoutFlow
+            pricing={pricing}
+            discountInr={discountInr}
+            couponCode={cart?.couponCode ?? null}
             addresses={addresses.map((a) => ({
               id: a.id,
               name: a.name,

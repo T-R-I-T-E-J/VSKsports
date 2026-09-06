@@ -1,4 +1,5 @@
 import { PageHeader } from "@/components/storefront/PageHeader";
+import { getPricingConfig } from "@/lib/settings";
 import { DealerNav } from "../DealerNav";
 import { requireDealerPage, getCreditUsed, getDealerProfile, getWholesaleProducts } from "../data";
 import { BulkOrderForm } from "./BulkOrderForm";
@@ -7,6 +8,7 @@ export const metadata = { title: "Bulk Order" };
 
 export default async function DealerBulkOrderPage() {
   const { userId } = await requireDealerPage();
+  const pricing = await getPricingConfig();
 
   const [profile, creditUsed, products] = await Promise.all([
     getDealerProfile(userId),
@@ -31,6 +33,7 @@ export default async function DealerBulkOrderPage() {
       <section className="section--tight" style={{ padding: "34px 0 64px" }}>
         <div className="wrap">
           <BulkOrderForm
+            pricing={pricing}
             products={products.map((p) => ({
               id: p.id,
               name: p.name,

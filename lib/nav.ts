@@ -100,4 +100,8 @@ export const ADMIN_NAV: { group: string; items: AdminNavItem[] }[] = [
       { label: "Media", href: "/admin/media", icon: "layers" },
     ],
   },
+  {
+    group: "CONFIGURATION",
+    items: [{ label: "Settings", href: "/admin/settings", icon: "cog" }],
+  },
 ];

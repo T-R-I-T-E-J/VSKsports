@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
-import { computeTotals, GST_LABEL } from "@/lib/pricing";
+import { computeTotals, gstLabel, type PricingConfig } from "@/lib/pricing";
 import { formatINR } from "@/lib/format";
 import { placeBulkOrder } from "../actions";
 
@@ -18,10 +18,13 @@ export function BulkOrderForm({
   products,
   creditLimitInr,
   creditUsedInr,
+  pricing,
 }: {
   products: WholesaleProduct[];
   creditLimitInr: number | null;
   creditUsedInr: number;
+  /** From the server — see CheckoutFlow for why this is a prop. */
+  pricing: PricingConfig;
 }) {
   const [qty, setQty] = useState<Record<string, number>>({});
   const [error, setError] = useState<string | null>(null);
@@ -36,7 +39,7 @@ export function BulkOrderForm({
     [products, qty],
   );
   const subtotal = lines.reduce((s, l) => s + l.product.dealerInr * l.quantity, 0);
-  const totals = computeTotals(subtotal, "standard");
+  const totals = computeTotals(subtotal, "standard", 0, pricing);
   const unitCount = lines.reduce((s, l) => s + l.quantity, 0);
   const available = creditLimitInr != null ? Math.max(0, creditLimitInr - creditUsedInr) : null;
   const overCredit = available != null && totals.totalInr > available;
@@ -162,7 +165,7 @@ export function BulkOrderForm({
             <span className="v">{formatINR(totals.subtotalInr)}</span>
           </div>
           <div className="row">
-            <span className="k">{GST_LABEL}</span>
+            <span className="k">{gstLabel(pricing)}</span>
             <span className="v">{formatINR(totals.gstInr)}</span>
           </div>
           <div className="row">

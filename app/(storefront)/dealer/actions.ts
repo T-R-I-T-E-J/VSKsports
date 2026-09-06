@@ -9,6 +9,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { computeTotals } from "@/lib/pricing";
+import { getPricingConfig } from "@/lib/settings";
 import { formatINR } from "@/lib/format";
 import { sendOrderConfirmationEmail } from "@/lib/email/mailer";
 
@@ -54,12 +55,13 @@ export async function placeBulkOrder(lines: BulkLine[]): Promise<BulkOrderResult
     }
   }
 
-  // Wholesale pricing: dealerPriceInr per unit; GST 5% via computeTotals.
+  // Wholesale pricing: dealerPriceInr per unit; GST at the configured rate.
   const subtotal = clean.reduce(
     (s, l) => s + (byId.get(l.productId)!.dealerPriceInr as number) * l.quantity,
     0,
   );
-  const totals = computeTotals(subtotal, "standard");
+  const pricing = await getPricingConfig();
+  const totals = computeTotals(subtotal, "standard", 0, pricing);
 
   const number = await uniqueB2BNumber();
 
